@@ -66,7 +66,7 @@ function App() {
   return (
     <ChakraProvider>
       <div className="App">
-        <Flex className="navbar">
+        <Flex className="navbar" p="1rem">
           <Box p="2">
             <Heading size="md">Informatics Leaderboard</Heading>
           </Box>
@@ -97,6 +97,7 @@ function App() {
                 errorBorderColor="red.300"
                 isRequired
                 isInvalid={!loginValid}
+                type="password"
               />
             </ModalBody>
             <ModalFooter>
@@ -107,6 +108,12 @@ function App() {
           </ModalContent>
         </Modal>
 
+        <Box
+          className="appBody"
+          margin="auto"
+          maxW="700px"
+          width="90%"
+        >
         {loggedIn && (
           <>
           <Heading as="h2" size="xl" mb="1rem">
@@ -114,9 +121,6 @@ function App() {
           </Heading>
           <VStack
             className="updateScores"
-            margin="auto"
-            maxW="700px"
-            width="90%"
             mb="2rem"            
           >
             <HStack spacing="10px">
@@ -151,6 +155,7 @@ function App() {
           Leaderboard
         </Heading>
         <Leaderboard data={data} />
+        </Box>
       </div>
     </ChakraProvider>
  );

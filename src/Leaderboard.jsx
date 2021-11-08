@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { VStack, StackDivider, Spacer, Flex, Box } from '@chakra-ui/react';
+import { VStack, StackDivider, Spacer, Flex, Box, Avatar } from '@chakra-ui/react';
 
 const Leaderboard = props => {
   const { data } = props;
@@ -24,12 +24,12 @@ const Leaderboard = props => {
     <VStack
       divider={<StackDivider borderColor="gray.200" />}
       align="stretch"
-      maxW="700px"
-      width="90%"
-      margin="auto"
     >
       {sortedData.map((info, idx) => (
-        <Flex key={idx}>
+        <Flex key={idx} alignItems="center">
+          <Box>
+            <Avatar size="sm" name={info.name} />
+          </Box>
           <Box p="2">
             {info.name}
           </Box>
