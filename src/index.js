@@ -5,10 +5,11 @@ import theme from './theme';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { firebase } from './firebase';
 
 ReactDOM.render(
   <React.StrictMode>
-    <ColorModeScript initialColorMode={"light"} />
+    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
     <App />
   </React.StrictMode>,
   document.getElementById('root')
