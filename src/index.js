@@ -5,6 +5,7 @@ import theme from './theme';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+// eslint-disable-next-line no-unused-vars
 import { firebase } from './firebase';
 
 ReactDOM.render(
