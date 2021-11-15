@@ -19,7 +19,6 @@ const Leaderboard = (props) => {
       sortedData.push({ name, score });
     }
     sortedData.sort((a, b) => b.score - a.score);
-    console.log(sortedData);
     return sortedData;
   };
 

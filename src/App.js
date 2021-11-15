@@ -7,15 +7,6 @@ import {
   Heading,
   Spacer,
   Button,
-  useDisclosure,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Input,
   Select,
   NumberInput,
   NumberInputField,
@@ -23,19 +14,20 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { collection, doc, getDocs, increment, updateDoc } from 'firebase/firestore';
+import { GithubAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
 import { db } from './firebase';
 import Leaderboard from "./Leaderboard";
 
 function App() {
+  const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loginInput, setLoginInput] = useState("");
-  const [loginValid, setLoginValid] = useState(true);
-  const handleLoginChange = (e) => setLoginInput(e.target.value);
   const [inputStudent, setInputStudent] = useState("");
   const [inputScore, setInputScore] = useState(10);
   const handleStudentChange = (e) => setInputStudent(e.target.value);
   const handleScoreChange = (e) => setInputScore(e);
   const [data, setData] = useState({});
+  const provider = new GithubAuthProvider();
+  const auth = getAuth();
 
   const getFirestoreData = async () => {
     const querySnapshot = await getDocs(collection(db, "students"));
@@ -50,23 +42,39 @@ function App() {
     setData(receivedData);
   };
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const submitLogin = () => {
-    if (loginInput === "yeet") {
-      setLoginValid(true);
+  auth.onAuthStateChanged(user => {
+    if (user) {
       setLoggedIn(true);
-      setLoginInput("");
-      onClose();
+      auth.currentUser.getIdTokenResult()
+        .then(idTokenResult => {
+          setAdmin(idTokenResult.claims.admin);
+        });
     } else {
-      setLoginValid(false);
+      setLoggedIn(false);
+      setAdmin(false);
     }
-  };
+  });
 
-  const logout = () => setLoggedIn(false);
+  const openAuth = () => {
+    signInWithPopup(auth, provider)
+      .catch(error => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(`${errorCode}: ${errorMessage}`);
+      });
+  }
+
+  const logout = () => {
+    auth.signOut()
+      .catch(error => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(`${errorCode}: ${errorMessage}`);
+      });
+  }
 
   const submitUpdate = () => {
-    if (inputStudent) {
+    if (inputStudent && inputScore) {
       setData({
         ...data,
         [inputStudent]: data[inputStudent] + parseInt(inputScore),
@@ -103,36 +111,12 @@ function App() {
                 Log out
               </Button>
             ) : (
-              <Button colorScheme="teal" variant="ghost" onClick={onOpen}>
+              <Button colorScheme="teal" variant="ghost" onClick={openAuth}>
                 Log in
               </Button>
             )}
           </Box>
         </Flex>
-
-        <Modal isOpen={isOpen} onClose={onClose}>
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Admin access</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              <Input
-                value={loginInput}
-                onChange={handleLoginChange}
-                placeholder="Admin code"
-                errorBorderColor="red.300"
-                isRequired
-                isInvalid={!loginValid}
-                type="password"
-              />
-            </ModalBody>
-            <ModalFooter>
-              <Button colorScheme="teal" onClick={submitLogin}>
-                Log in
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
 
         <Flex
           className="appBody"
@@ -143,7 +127,7 @@ function App() {
           direction="column"
           alignItems="stretch"
         >
-          {loggedIn && (
+          {admin && (
             <>
               <Heading as="h2" size="xl" mb="1rem">
                 Update scores
