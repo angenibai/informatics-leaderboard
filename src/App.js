@@ -1,7 +1,6 @@
 import "./App.css";
 import React, { useState, useEffect } from "react";
 import {
-  ChakraProvider,
   Flex,
   Box,
   Heading,
@@ -12,10 +11,19 @@ import {
   NumberInputField,
   VStack,
   HStack,
+  useColorMode,
+  IconButton
 } from "@chakra-ui/react";
-import { collection, doc, getDocs, increment, updateDoc } from 'firebase/firestore';
+import { MoonIcon, SunIcon } from "@chakra-ui/icons";
+import {
+  collection,
+  doc,
+  getDocs,
+  increment,
+  updateDoc,
+} from "firebase/firestore";
 import { GithubAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
-import { db } from './firebase';
+import { db } from "./firebase";
 import Leaderboard from "./Leaderboard";
 
 function App() {
@@ -28,11 +36,12 @@ function App() {
   const [data, setData] = useState({});
   const provider = new GithubAuthProvider();
   const auth = getAuth();
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const getFirestoreData = async () => {
     const querySnapshot = await getDocs(collection(db, "students"));
     let receivedData = {};
-    querySnapshot.forEach(doc => {
+    querySnapshot.forEach((doc) => {
       const studentData = doc.data();
       receivedData = {
         ...receivedData,
@@ -42,13 +51,12 @@ function App() {
     setData(receivedData);
   };
 
-  auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged((user) => {
     if (user) {
       setLoggedIn(true);
-      auth.currentUser.getIdTokenResult()
-        .then(idTokenResult => {
-          setAdmin(idTokenResult.claims.admin);
-        });
+      auth.currentUser.getIdTokenResult().then((idTokenResult) => {
+        setAdmin(idTokenResult.claims.admin);
+      });
     } else {
       setLoggedIn(false);
       setAdmin(false);
@@ -56,22 +64,20 @@ function App() {
   });
 
   const openAuth = () => {
-    signInWithPopup(auth, provider)
-      .catch(error => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.error(`${errorCode}: ${errorMessage}`);
-      });
-  }
+    signInWithPopup(auth, provider).catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.error(`${errorCode}: ${errorMessage}`);
+    });
+  };
 
   const logout = () => {
-    auth.signOut()
-      .catch(error => {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        console.error(`${errorCode}: ${errorMessage}`);
-      });
-  }
+    auth.signOut().catch((error) => {
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      console.error(`${errorCode}: ${errorMessage}`);
+    });
+  };
 
   const submitUpdate = () => {
     if (inputStudent && inputScore) {
@@ -88,9 +94,8 @@ function App() {
   const updateFirestore = async (studentName, studentInc) => {
     const studentRef = doc(db, "students", studentName.toLowerCase());
     updateDoc(studentRef, {
-      score: increment(studentInc)
-    })
-    .catch(err => console.error(err));
+      score: increment(studentInc),
+    }).catch((err) => console.error(err));
   };
 
   useEffect(() => {
@@ -98,79 +103,85 @@ function App() {
   }, []);
 
   return (
-    <ChakraProvider>
-      <div className="App">
-        <Flex className="navbar" p="1rem">
-          <Box p="2">
-            <Heading size="md">Informatics Leaderboard</Heading>
-          </Box>
-          <Spacer />
-          <Box>
-            {loggedIn ? (
-              <Button colorScheme="teal" variant="ghost" onClick={logout}>
-                Log out
-              </Button>
-            ) : (
-              <Button colorScheme="teal" variant="ghost" onClick={openAuth}>
-                Log in
-              </Button>
-            )}
-          </Box>
-        </Flex>
-
-        <Flex
-          className="appBody"
-          margin="auto"
-          maxW="700px"
-          width="90%"
-          textAlign="center"
-          direction="column"
-          alignItems="stretch"
-        >
-          {admin && (
-            <>
-              <Heading as="h2" size="xl" mb="1rem">
-                Update scores
-              </Heading>
-              <VStack className="updateScores" mb="3rem">
-                <HStack spacing="10px">
-                  <Select
-                    placeholder="Select student"
-                    value={inputStudent}
-                    onChange={handleStudentChange}
-                  >
-                    {Object.keys(data)
-                      .sort((a, b) => a > b)
-                      .map((name, idx) => (
-                        <option key={idx} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                  </Select>
-                  <Spacer />
-                  <NumberInput
-                    defaultValue={10}
-                    value={inputScore}
-                    onChange={handleScoreChange}
-                  >
-                    <NumberInputField />
-                  </NumberInput>
-                </HStack>
-                <Button colorScheme="teal" onClick={submitUpdate}>
-                  Update
-                </Button>
-              </VStack>
-            </>
+    <div className="App">
+      <Flex className="navbar" p="1rem">
+        <Box p="2">
+          <Heading size="md">Informatics Leaderboard</Heading>
+        </Box>
+        <Spacer />
+        <Box mr="0.2rem">
+          {loggedIn ? (
+            <Button colorScheme="teal" variant="ghost" onClick={logout}>
+              Log out
+            </Button>
+          ) : (
+            <Button colorScheme="teal" variant="ghost" onClick={openAuth}>
+              Log in
+            </Button>
           )}
-          <Flex justifyContent="center">
-            <Heading as="h1" size="xl" mb="1rem" maxWidth="500px">
-              Who is the informatics supreme leader at PLC?
+        </Box>
+        <Box>
+          <IconButton
+            aria-label="Toggle dark mode"
+            variant="ghost"
+            icon={colorMode === "light" ? <SunIcon /> : <MoonIcon />}
+            onClick={toggleColorMode}
+          />
+        </Box>
+      </Flex>
+
+      <Flex
+        className="appBody"
+        margin="auto"
+        maxW="700px"
+        width="90%"
+        textAlign="center"
+        direction="column"
+        alignItems="stretch"
+      >
+        {admin && (
+          <>
+            <Heading as="h2" size="xl" mb="1rem">
+              Update scores
             </Heading>
-          </Flex>
-          <Leaderboard data={data} />
+            <VStack className="updateScores" mb="3rem">
+              <HStack spacing="10px">
+                <Select
+                  placeholder="Select student"
+                  value={inputStudent}
+                  onChange={handleStudentChange}
+                >
+                  {Object.keys(data)
+                    .sort((a, b) => a > b)
+                    .map((name, idx) => (
+                      <option key={idx} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                </Select>
+                <Spacer />
+                <NumberInput
+                  defaultValue={10}
+                  value={inputScore}
+                  onChange={handleScoreChange}
+                >
+                  <NumberInputField />
+                </NumberInput>
+              </HStack>
+              <Button colorScheme="teal" onClick={submitUpdate}>
+                Update
+              </Button>
+            </VStack>
+          </>
+        )}
+        <Flex justifyContent="center">
+          <Heading as="h1" size="xl" mb="1rem" maxWidth="500px">
+            Who is the informatics supreme leader at PLC?
+          </Heading>
         </Flex>
-      </div>
-    </ChakraProvider>
+        <Leaderboard data={data} />
+      </Flex>
+    </div>
   );
 }
 
