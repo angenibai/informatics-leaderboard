@@ -8,39 +8,52 @@ import {
   Button,
   useColorMode,
   IconButton,
+  VStack,
+  Text,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import {
-  collection,
-  doc,
-  getDocs,
-  increment,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
 import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { db } from "./firebase";
 import Leaderboard from "./Leaderboard";
-import UpdateScoreContainer from "./UpdateScoreContainer";
+import SubmitToken from "./SubmitToken";
 
 function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [data, setData] = useState({});
+  const [loggedInUsername, setLoggedInUsername] = useState("");
+  const [data, setData] = useState([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
   const getFirestoreData = async () => {
     const querySnapshot = await getDocs(collection(db, "students"));
-    let receivedData = {};
+    let receivedData = [];
+    console.log(querySnapshot);
     querySnapshot.forEach((doc) => {
       const studentData = doc.data();
-      receivedData = {
-        ...receivedData,
-        [studentData.name]: studentData.score,
-      };
+      receivedData = [...receivedData, studentData];
     });
     setData(receivedData);
+  };
+
+  const createUser = async (user) => {
+    const userDoc = await getDoc(doc(db, "students", user.uid));
+    if (!userDoc.exists()) {
+      setDoc(doc(db, "students", user.uid), {
+        id: user.uid,
+        name: user.displayName,
+        photoURL: user.photoURL,
+        score: 0,
+        solves: [],
+      })
+        .then(() => {
+          console.log("set doc success");
+          getFirestoreData();
+        })
+        .catch((err) => console.error(err));
+    }
   };
 
   auth.onAuthStateChanged((user) => {
@@ -49,9 +62,12 @@ function App() {
       auth.currentUser.getIdTokenResult().then((idTokenResult) => {
         setAdmin(idTokenResult.claims.admin);
       });
+      createUser(user);
+      setLoggedInUsername(user.displayName);
     } else {
       setLoggedIn(false);
       setAdmin(false);
+      setLoggedInUsername("");
     }
   });
 
@@ -71,19 +87,16 @@ function App() {
     });
   };
 
-  const dbIncrementScore = async (studentName, studentInc) => {
-    const studentRef = doc(db, "students", studentName.toLowerCase());
-    updateDoc(studentRef, {
-      score: increment(studentInc),
-    }).catch((err) => console.error(err));
-  };
-
-  const updateScore = (student, incScore) => {
-    setData({
-      ...data,
-      [student]: data[student] + incScore,
+  const updateLocalStudentData = (newStudentData) => {
+    const newData = [];
+    data.forEach((studentData) => {
+      if (studentData.id === newStudentData.id) {
+        newData.push(newStudentData);
+      } else {
+        newData.push(studentData);
+      }
     });
-    dbIncrementScore(student, incScore);
+    setData(newData);
   };
 
   useEffect(() => {
@@ -97,6 +110,9 @@ function App() {
           <Heading size="md">Informatics Leaderboard</Heading>
         </Box>
         <Spacer />
+        <Flex mr="1rem" alignItems="center">
+          {loggedIn && <Text>Hello, {loggedInUsername}</Text>}
+        </Flex>
         <Box mr="0.2rem">
           {loggedIn ? (
             <Button colorScheme="teal" variant="ghost" onClick={logout}>
@@ -117,23 +133,24 @@ function App() {
           />
         </Box>
       </Flex>
-      <Flex
+      <VStack
         className="appBody"
         margin="auto"
         maxW="700px"
         width="90%"
         textAlign="center"
-        direction="column"
         alignItems="stretch"
+        spacing={8}
       >
         {admin && (
           <>
-            <UpdateScoreContainer
-              data={data}
-              updateScore={updateScore}
-              students={Object.keys(data)}
-            />
+            <Heading as="h1" size="l">
+              You are an admin
+            </Heading>
           </>
+        )}
+        {loggedIn && (
+          <SubmitToken db={db} updateCallback={updateLocalStudentData} />
         )}
         <Flex justifyContent="center">
           <Heading as="h1" size="xl" mb="1rem" maxWidth="500px">
@@ -141,7 +158,7 @@ function App() {
           </Heading>
         </Flex>
         <Leaderboard data={data} />
-      </Flex>
+      </VStack>
     </div>
   );
 }

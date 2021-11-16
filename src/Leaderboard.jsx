@@ -13,11 +13,9 @@ const Leaderboard = (props) => {
   const [sortedData, setSortedData] = useState([]);
 
   const createSortedData = (data) => {
-    // data comes in as dictionary in format name: score
+    // data comes in as list of student objects
     const sortedData = [];
-    for (const [name, score] of Object.entries(data)) {
-      sortedData.push({ name, score });
-    }
+    data.forEach((x) => sortedData.push(x));
     sortedData.sort((a, b) => b.score - a.score);
     return sortedData;
   };
@@ -31,7 +29,7 @@ const Leaderboard = (props) => {
       {sortedData.map((info, idx) => (
         <Flex key={idx} alignItems="center">
           <Box>
-            <Avatar size="sm" name={info.name} />
+            <Avatar size="sm" name={info.name} src={info.photoURL} />
           </Box>
           <Box p="2">{info.name}</Box>
           <Spacer />
