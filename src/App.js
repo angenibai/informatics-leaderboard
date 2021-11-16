@@ -6,13 +6,8 @@ import {
   Heading,
   Spacer,
   Button,
-  Select,
-  NumberInput,
-  NumberInputField,
-  VStack,
-  HStack,
   useColorMode,
-  IconButton
+  IconButton,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import {
@@ -22,19 +17,16 @@ import {
   increment,
   updateDoc,
 } from "firebase/firestore";
-import { GithubAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { db } from "./firebase";
 import Leaderboard from "./Leaderboard";
+import UpdateScoreContainer from "./UpdateScoreContainer";
 
 function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [inputStudent, setInputStudent] = useState("");
-  const [inputScore, setInputScore] = useState(10);
-  const handleStudentChange = (e) => setInputStudent(e.target.value);
-  const handleScoreChange = (e) => setInputScore(e);
   const [data, setData] = useState({});
-  const provider = new GithubAuthProvider();
+  const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
@@ -79,23 +71,19 @@ function App() {
     });
   };
 
-  const submitUpdate = () => {
-    if (inputStudent && inputScore) {
-      setData({
-        ...data,
-        [inputStudent]: data[inputStudent] + parseInt(inputScore),
-      });
-      setInputStudent("");
-      setInputScore(10);
-      updateFirestore(inputStudent, inputScore);
-    }
-  };
-
-  const updateFirestore = async (studentName, studentInc) => {
+  const dbIncrementScore = async (studentName, studentInc) => {
     const studentRef = doc(db, "students", studentName.toLowerCase());
     updateDoc(studentRef, {
       score: increment(studentInc),
     }).catch((err) => console.error(err));
+  };
+
+  const updateScore = (student, incScore) => {
+    setData({
+      ...data,
+      [student]: data[student] + incScore,
+    });
+    dbIncrementScore(student, incScore);
   };
 
   useEffect(() => {
@@ -129,7 +117,6 @@ function App() {
           />
         </Box>
       </Flex>
-
       <Flex
         className="appBody"
         margin="auto"
@@ -141,37 +128,11 @@ function App() {
       >
         {admin && (
           <>
-            <Heading as="h2" size="xl" mb="1rem">
-              Update scores
-            </Heading>
-            <VStack className="updateScores" mb="3rem">
-              <HStack spacing="10px">
-                <Select
-                  placeholder="Select student"
-                  value={inputStudent}
-                  onChange={handleStudentChange}
-                >
-                  {Object.keys(data)
-                    .sort((a, b) => a > b)
-                    .map((name, idx) => (
-                      <option key={idx} value={name}>
-                        {name}
-                      </option>
-                    ))}
-                </Select>
-                <Spacer />
-                <NumberInput
-                  defaultValue={10}
-                  value={inputScore}
-                  onChange={handleScoreChange}
-                >
-                  <NumberInputField />
-                </NumberInput>
-              </HStack>
-              <Button colorScheme="teal" onClick={submitUpdate}>
-                Update
-              </Button>
-            </VStack>
+            <UpdateScoreContainer
+              data={data}
+              updateScore={updateScore}
+              students={Object.keys(data)}
+            />
           </>
         )}
         <Flex justifyContent="center">
