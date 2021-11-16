@@ -17,7 +17,7 @@ import {
   increment,
   updateDoc,
 } from "firebase/firestore";
-import { GithubAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { db } from "./firebase";
 import Leaderboard from "./Leaderboard";
 import UpdateScoreContainer from "./UpdateScoreContainer";
@@ -26,7 +26,7 @@ function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
   const [data, setData] = useState({});
-  const provider = new GithubAuthProvider();
+  const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
