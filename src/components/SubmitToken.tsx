@@ -25,19 +25,18 @@ import AlertBox from "./AlertBox";
 interface SubmitTokenProps {
   db: Firestore;
   updateCallback: (newStudentData: DocumentData) => void;
+  successCallback: () => void;
 }
 
 const SubmitToken = (props: SubmitTokenProps) => {
   const { db, updateCallback } = props;
 
-  const [inputProblem, setInputProblem] = useState("");
   const [inputToken, setInputToken] = useState("");
   const [tokenError, setTokenError] = useState(false);
   const [errorMessage, setErrorMessage] = useState(
     "Please check that your problem number and token are correct"
   );
   const [tokenSuccess, setTokenSuccess] = useState(false);
-  const handleProblemChange = (e: ChangeEvent<HTMLInputElement>) => setInputProblem(e.target.value);
   const handleTokenChange = (e: ChangeEvent<HTMLInputElement>) => setInputToken(e.target.value);
 
   const auth = getAuth();
@@ -46,16 +45,27 @@ const SubmitToken = (props: SubmitTokenProps) => {
   const handleSubmit = async () => {
     setTokenSuccess(false);
 
-    if (!inputProblem || !inputToken) {
+    if (!inputToken) {
       // invalid input
       setTokenError(true);
-      setErrorMessage("Inputs have not been filled");
+      setErrorMessage("Please enter a token");
       return;
     }
 
+    const splitToken = inputToken.split("-");
+    if (splitToken.length !== 2) {
+      // not correct format
+      setTokenError(true);
+      setErrorMessage("Token is invalid");
+      return;
+    }
+
+    const problem = splitToken[0];
+    const problemHash = splitToken[1];
+
     let hash = sha256.create();
-    hash.update(inputProblem);
-    if (hash.hex() !== inputToken) {
+    hash.update(problem);
+    if (hash.hex() !== problemHash) {
       // token isn't valid
       setTokenError(true);
       setErrorMessage("Token is invalid");
@@ -77,7 +87,7 @@ const SubmitToken = (props: SubmitTokenProps) => {
       return;
     }
     const studentData = userDoc.data();
-    if (studentData.solves.includes(inputProblem)) {
+    if (studentData.solves.includes(problem)) {
       // question has already been answered
       setTokenError(true);
       setErrorMessage("You have already solved this problem");
@@ -86,18 +96,17 @@ const SubmitToken = (props: SubmitTokenProps) => {
 
     updateDoc(studentRef, {
       ...studentData,
-      solves: arrayUnion(inputProblem),
+      solves: arrayUnion(problem),
       score: increment(10),
     })
       .then(() => {
         // success
         setTokenError(false);
         setTokenSuccess(true);
-        setInputProblem("");
         setInputToken("");
         updateCallback({
           ...studentData,
-          solves: studentData.solves.push(inputProblem),
+          solves: studentData.solves.push(problem),
           score: studentData.score + 10,
         });
       })
@@ -110,10 +119,8 @@ const SubmitToken = (props: SubmitTokenProps) => {
   return (
     <Box
       className="SubmitToken"
-      borderRadius="base"
-      borderWidth={1.5}
-      borderColor="teal"
       padding={6}
+      textAlign="center"
     >
       {tokenError && (
         <AlertBox
@@ -131,37 +138,26 @@ const SubmitToken = (props: SubmitTokenProps) => {
           onClose={() => setTokenSuccess(false)}
         />
       )}
-      <Heading as="h1" size="xl" mb="1rem">
+      <Heading as="h1" size="xl" mb={4}>
         Submit token
       </Heading>
+      
       <VStack className="submitTokenForm">
         <Grid
           templateColumns="repeat(8, 1fr)"
           autoRows="auto"
-          gap={4}
+          gap={2}
           textAlign="left"
-          mb={2}
+          mb={3}
         >
-          <GridItem colSpan={2} colStart={2}>
-            <Text>Problem number</Text>
-          </GridItem>
-          <GridItem colSpan={4}>
+          <GridItem colStart={2}>
             <Text>Token</Text>
           </GridItem>
           <>
-            <GridItem colSpan={2} colStart={2}>
-              <Input
-                aria-label="Problem number input"
-                placeholder="100"
-                isRequired
-                value={inputProblem}
-                onChange={handleProblemChange}
-              />
-            </GridItem>
-            <GridItem colSpan={4}>
+            <GridItem colStart={2} colSpan={6}>
               <Input
                 aria-label="Token input"
-                placeholder="275976081ce1abx67709eb3c388b5e14531022e5q137502e264776e1a6a11595"
+                placeholder="101-275976081ce1abx67709eb3c388b5e14531022e5q137502e264776e1a6a11595"
                 isRequired
                 value={inputToken}
                 onChange={handleTokenChange}
@@ -169,6 +165,7 @@ const SubmitToken = (props: SubmitTokenProps) => {
             </GridItem>
           </>
         </Grid>
+        
         <Button colorScheme="teal" onClick={handleSubmit}>
           Submit
         </Button>

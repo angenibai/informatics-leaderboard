@@ -10,6 +10,11 @@ import {
   IconButton,
   VStack,
   Text,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalCloseButton,
+  ModalContent,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import { collection, doc, DocumentData, getDoc, getDocs, setDoc } from "firebase/firestore";
@@ -105,17 +110,26 @@ function App() {
     getFirestoreData();
   }, []);
 
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
   return (
     <div className="App">
-      <Flex className="navbar" p="1rem">
+      <Flex className="navbar" p={4}>
         <Box p="2">
           <Heading size="md">Informatics Leaderboard</Heading>
         </Box>
         <Spacer />
-        <Flex mr="1rem" alignItems="center">
+        <Flex mr={5} alignItems="center">
           {loggedIn && <Text>Hello, {loggedInUsername}</Text>}
         </Flex>
-        <Box mr="0.2rem">
+        {loggedIn && (
+          <Box mr={1}>
+            <Button colorScheme="teal" onClick={onOpen}>
+              Submit token
+            </Button>
+          </Box>
+        )}
+        <Box mr={1}>
           {loggedIn ? (
             <Button colorScheme="teal" variant="ghost" onClick={logout}>
               Log out
@@ -151,11 +165,15 @@ function App() {
             </Heading>
           </>
         )}
-        {loggedIn && (
-          <SubmitToken db={db} updateCallback={updateLocalStudentData} />
-        )}
+        <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalCloseButton />
+            <SubmitToken db={db} updateCallback={updateLocalStudentData} successCallback={onClose} />
+          </ModalContent>
+        </Modal>
         <Flex justifyContent="center">
-          <Heading as="h1" size="xl" mb="1rem" maxWidth="500px">
+          <Heading as="h1" size="xl" mb={4} maxWidth="500px">
             Who is the informatics supreme leader at PLC?
           </Heading>
         </Flex>

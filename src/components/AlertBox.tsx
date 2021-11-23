@@ -9,8 +9,8 @@ import {
 
 interface AlertBoxProps {
   type: "info" | "warning" | "success" | "error" | undefined;
-  title: string;
-  description: string;
+  title?: string;
+  description?: string;
   onClose: () => void;
 }
 
@@ -18,7 +18,7 @@ const AlertBox = (props: AlertBoxProps) => {
   const { type, title, description, onClose } = props;
 
   return (
-    <Alert status={type} mb={4}>
+    <Alert status={type} mb={4} mt={4}>
       <AlertIcon />
       <AlertTitle mr={2}>{title}</AlertTitle>
       <AlertDescription>{description}</AlertDescription>
