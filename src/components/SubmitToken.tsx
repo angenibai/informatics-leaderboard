@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import {
   Box,
   Heading,
@@ -13,6 +13,8 @@ import { getAuth } from "@firebase/auth";
 import {
   arrayUnion,
   doc,
+  DocumentData,
+  Firestore,
   getDoc,
   increment,
   updateDoc,
@@ -20,7 +22,12 @@ import {
 import { sha256 } from "js-sha256";
 import AlertBox from "./AlertBox";
 
-const SubmitToken = (props) => {
+interface SubmitTokenProps {
+  db: Firestore;
+  updateCallback: (newStudentData: DocumentData) => void;
+}
+
+const SubmitToken = (props: SubmitTokenProps) => {
   const { db, updateCallback } = props;
 
   const [inputProblem, setInputProblem] = useState("");
@@ -30,8 +37,8 @@ const SubmitToken = (props) => {
     "Please check that your problem number and token are correct"
   );
   const [tokenSuccess, setTokenSuccess] = useState(false);
-  const handleProblemChange = (e) => setInputProblem(e.target.value);
-  const handleTokenChange = (e) => setInputToken(e.target.value);
+  const handleProblemChange = (e: ChangeEvent<HTMLInputElement>) => setInputProblem(e.target.value);
+  const handleTokenChange = (e: ChangeEvent<HTMLInputElement>) => setInputToken(e.target.value);
 
   const auth = getAuth();
   const user = auth.currentUser;
@@ -52,6 +59,12 @@ const SubmitToken = (props) => {
       // token isn't valid
       setTokenError(true);
       setErrorMessage("Token is invalid");
+      return;
+    }
+
+    if (!user) {
+      setTokenError(true);
+      setErrorMessage("User error");
       return;
     }
 
@@ -124,7 +137,7 @@ const SubmitToken = (props) => {
       <VStack className="submitTokenForm">
         <Grid
           templateColumns="repeat(8, 1fr)"
-          autoRows
+          autoRows="auto"
           gap={4}
           textAlign="left"
           mb={2}

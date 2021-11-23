@@ -1,5 +1,3 @@
-import React from "react";
-
 import {
   Alert,
   AlertIcon,
@@ -9,7 +7,14 @@ import {
   CloseButton,
 } from "@chakra-ui/react";
 
-const AlertBox = (props) => {
+interface AlertBoxProps {
+  type: "info" | "warning" | "success" | "error" | undefined;
+  title: string;
+  description: string;
+  onClose: () => void;
+}
+
+const AlertBox = (props: AlertBoxProps) => {
   const { type, title, description, onClose } = props;
 
   return (

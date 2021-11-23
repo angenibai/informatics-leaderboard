@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Flex,
   Box,
@@ -12,24 +12,24 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { collection, doc, DocumentData, getDoc, getDocs, setDoc } from "firebase/firestore";
+import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 import { db } from "./firebase";
-import Leaderboard from "./Leaderboard";
-import SubmitToken from "./SubmitToken";
+import Leaderboard from "./components/Leaderboard";
+import SubmitToken from "./components/SubmitToken";
 
 function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loggedInUsername, setLoggedInUsername] = useState("");
-  const [data, setData] = useState([]);
+  const [loggedInUsername, setLoggedInUsername] = useState<string|null>("");
+  const [data, setData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
   const getFirestoreData = async () => {
     const querySnapshot = await getDocs(collection(db, "students"));
-    let receivedData = [];
+    let receivedData: DocumentData[] = [];
     console.log(querySnapshot);
     querySnapshot.forEach((doc) => {
       const studentData = doc.data();
@@ -38,7 +38,7 @@ function App() {
     setData(receivedData);
   };
 
-  const createUser = async (user) => {
+  const createUser = async (user: User) => {
     const userDoc = await getDoc(doc(db, "students", user.uid));
     if (!userDoc.exists()) {
       setDoc(doc(db, "students", user.uid), {
@@ -59,9 +59,11 @@ function App() {
   auth.onAuthStateChanged((user) => {
     if (user) {
       setLoggedIn(true);
-      auth.currentUser.getIdTokenResult().then((idTokenResult) => {
-        setAdmin(idTokenResult.claims.admin);
-      });
+      if (auth.currentUser) {
+        auth.currentUser.getIdTokenResult().then((idTokenResult) => {
+          setAdmin(idTokenResult.claims.admin as unknown as boolean);
+        });
+      }
       createUser(user);
       setLoggedInUsername(user.displayName);
     } else {
@@ -87,8 +89,8 @@ function App() {
     });
   };
 
-  const updateLocalStudentData = (newStudentData) => {
-    const newData = [];
+  const updateLocalStudentData = (newStudentData: DocumentData) => {
+    const newData: DocumentData[] = [];
     data.forEach((studentData) => {
       if (studentData.id === newStudentData.id) {
         newData.push(newStudentData);
