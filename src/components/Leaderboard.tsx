@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   VStack,
   StackDivider,
@@ -7,14 +7,19 @@ import {
   Box,
   Avatar,
 } from "@chakra-ui/react";
+import { DocumentData } from "@firebase/firestore";
 
-const Leaderboard = (props) => {
+interface LeaderboardProps {
+  data: DocumentData[];
+}
+
+const Leaderboard = (props: LeaderboardProps) => {
   const { data } = props;
-  const [sortedData, setSortedData] = useState([]);
+  const [sortedData, setSortedData] = useState<DocumentData[]>([]);
 
-  const createSortedData = (data) => {
+  const createSortedData = (data: DocumentData[]) => {
     // data comes in as list of student objects
-    const sortedData = [];
+    const sortedData: DocumentData[] = [];
     data.forEach((x) => sortedData.push(x));
     sortedData.sort((a, b) => b.score - a.score);
     return sortedData;

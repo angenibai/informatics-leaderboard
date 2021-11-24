@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Flex,
   Box,
@@ -10,35 +10,57 @@ import {
   IconButton,
   VStack,
   Text,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalCloseButton,
+  ModalContent,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import {
+  collection,
+  doc,
+  DocumentData,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  User,
+} from "firebase/auth";
 import { db } from "./firebase";
-import Leaderboard from "./Leaderboard";
-import SubmitToken from "./SubmitToken";
+import Leaderboard from "./components/Leaderboard";
+import SubmitToken from "./components/SubmitToken";
 
 function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loggedInUsername, setLoggedInUsername] = useState("");
-  const [data, setData] = useState([]);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>("");
+  const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
+  const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
-  const getFirestoreData = async () => {
-    const querySnapshot = await getDocs(collection(db, "students"));
-    let receivedData = [];
-    console.log(querySnapshot);
-    querySnapshot.forEach((doc) => {
-      const studentData = doc.data();
-      receivedData = [...receivedData, studentData];
-    });
-    setData(receivedData);
+  const queryDbCollection = async (collectionName: string) => {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    return Array.from(querySnapshot.docs.map((el) => el.data()));
   };
 
-  const createUser = async (user) => {
+  const getDbStudentData = async () => {
+    const receivedData = await queryDbCollection("students");
+    setStudentsData(receivedData);
+  };
+
+  const getDbProblemData = async () => {
+    const receivedData = await queryDbCollection("problems");
+    setProblemsData(receivedData);
+  };
+
+  const createUser = async (user: User) => {
     const userDoc = await getDoc(doc(db, "students", user.uid));
     if (!userDoc.exists()) {
       setDoc(doc(db, "students", user.uid), {
@@ -50,7 +72,7 @@ function App() {
       })
         .then(() => {
           console.log("set doc success");
-          getFirestoreData();
+          getDbStudentData();
         })
         .catch((err) => console.error(err));
     }
@@ -59,9 +81,11 @@ function App() {
   auth.onAuthStateChanged((user) => {
     if (user) {
       setLoggedIn(true);
-      auth.currentUser.getIdTokenResult().then((idTokenResult) => {
-        setAdmin(idTokenResult.claims.admin);
-      });
+      if (auth.currentUser) {
+        auth.currentUser.getIdTokenResult().then((idTokenResult) => {
+          setAdmin(idTokenResult.claims.admin as unknown as boolean);
+        });
+      }
       createUser(user);
       setLoggedInUsername(user.displayName);
     } else {
@@ -87,33 +111,44 @@ function App() {
     });
   };
 
-  const updateLocalStudentData = (newStudentData) => {
-    const newData = [];
-    data.forEach((studentData) => {
+  const updateLocalStudentData = (newStudentData: DocumentData) => {
+    const newData: DocumentData[] = [];
+    studentsData.forEach((studentData) => {
       if (studentData.id === newStudentData.id) {
         newData.push(newStudentData);
       } else {
         newData.push(studentData);
       }
     });
-    setData(newData);
+    setStudentsData(newData);
   };
 
   useEffect(() => {
-    getFirestoreData();
+    getDbStudentData();
+    getDbProblemData();
+    // eslint-disable-next-line
   }, []);
+
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
     <div className="App">
-      <Flex className="navbar" p="1rem">
+      <Flex className="navbar" p={4}>
         <Box p="2">
           <Heading size="md">Informatics Leaderboard</Heading>
         </Box>
         <Spacer />
-        <Flex mr="1rem" alignItems="center">
+        <Flex mr={5} alignItems="center">
           {loggedIn && <Text>Hello, {loggedInUsername}</Text>}
         </Flex>
-        <Box mr="0.2rem">
+        {loggedIn && (
+          <Box mr={1}>
+            <Button colorScheme="teal" onClick={onOpen}>
+              Submit token
+            </Button>
+          </Box>
+        )}
+        <Box mr={1}>
           {loggedIn ? (
             <Button colorScheme="teal" variant="ghost" onClick={logout}>
               Log out
@@ -149,15 +184,24 @@ function App() {
             </Heading>
           </>
         )}
-        {loggedIn && (
-          <SubmitToken db={db} updateCallback={updateLocalStudentData} />
-        )}
+        <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalCloseButton />
+            <SubmitToken
+              db={db}
+              problemsData={problemsData}
+              updateCallback={updateLocalStudentData}
+              successCallback={onClose}
+            />
+          </ModalContent>
+        </Modal>
         <Flex justifyContent="center">
-          <Heading as="h1" size="xl" mb="1rem" maxWidth="500px">
+          <Heading as="h1" size="xl" mb={4} maxWidth="500px">
             Who is the informatics supreme leader at PLC?
           </Heading>
         </Flex>
-        <Leaderboard data={data} />
+        <Leaderboard data={studentsData} />
       </VStack>
     </div>
   );
