@@ -17,19 +17,20 @@ import {
   Firestore,
   getDoc,
   increment,
+  Timestamp,
   updateDoc,
 } from "@firebase/firestore";
-import { sha256 } from "js-sha256";
 import AlertBox from "./AlertBox";
 
 interface SubmitTokenProps {
   db: Firestore;
+  problemsData: DocumentData[];
   updateCallback: (newStudentData: DocumentData) => void;
   successCallback: () => void;
 }
 
 const SubmitToken = (props: SubmitTokenProps) => {
-  const { db, updateCallback } = props;
+  const { db, problemsData, updateCallback } = props;
 
   const [inputToken, setInputToken] = useState("");
   const [tokenError, setTokenError] = useState(false);
@@ -37,19 +38,25 @@ const SubmitToken = (props: SubmitTokenProps) => {
     "Please check that your problem number and token are correct"
   );
   const [tokenSuccess, setTokenSuccess] = useState(false);
-  const handleTokenChange = (e: ChangeEvent<HTMLInputElement>) => setInputToken(e.target.value);
+  const handleTokenChange = (e: ChangeEvent<HTMLInputElement>) =>
+    setInputToken(e.target.value);
+  const [pointsEarned, setPointsEarned] = useState(10);
 
   const auth = getAuth();
   const user = auth.currentUser;
 
-  const handleSubmit = async () => {
-    setTokenSuccess(false);
+  const validateToken = async () => {
+    let returnVals = {
+      studentRef: null,
+      studentDoc: null,
+      problemDoc: null,
+    };
 
     if (!inputToken) {
       // invalid input
       setTokenError(true);
       setErrorMessage("Please enter a token");
-      return;
+      return returnVals;
     }
 
     const splitToken = inputToken.split("-");
@@ -57,25 +64,15 @@ const SubmitToken = (props: SubmitTokenProps) => {
       // not correct format
       setTokenError(true);
       setErrorMessage("Token is invalid");
-      return;
+      return returnVals;
     }
 
     const problem = splitToken[0];
-    const problemHash = splitToken[1];
-
-    let hash = sha256.create();
-    hash.update(problem);
-    if (hash.hex() !== problemHash) {
-      // token isn't valid
-      setTokenError(true);
-      setErrorMessage("Token is invalid");
-      return;
-    }
 
     if (!user) {
       setTokenError(true);
       setErrorMessage("User error");
-      return;
+      return returnVals;
     }
 
     const studentRef = doc(db, "students", user.uid);
@@ -84,44 +81,76 @@ const SubmitToken = (props: SubmitTokenProps) => {
       // doc doesn't exist in firebase
       setTokenError(true);
       setErrorMessage("User doesn't exist in database");
-      return;
+      return returnVals;
     }
-    const studentData = userDoc.data();
-    if (studentData.solves.includes(problem)) {
+
+    // get problem id
+    const problemDocs = problemsData.filter((el) => el.problem === problem);
+    if (problemDocs.length !== 1) {
+      // either no or more than one matching problem
+      setTokenError(true);
+      setErrorMessage("Problem doesn't exist in database");
+      return returnVals;
+    }
+    const problemDoc = problemDocs[0];
+
+    // validate token
+    if (problemDoc.token !== inputToken) {
+      setTokenError(true);
+      setErrorMessage("Token is invalid");
+      return returnVals;
+    }
+
+    const studentDoc = userDoc.data();
+    if (
+      studentDoc.solves.filter((el: { id: any }) => el.id === problemDoc.id)
+        .length > 0
+    ) {
       // question has already been answered
       setTokenError(true);
       setErrorMessage("You have already solved this problem");
-      return;
+      return returnVals;
     }
 
-    updateDoc(studentRef, {
-      ...studentData,
-      solves: arrayUnion(problem),
-      score: increment(10),
-    })
-      .then(() => {
-        // success
-        setTokenError(false);
-        setTokenSuccess(true);
-        setInputToken("");
-        updateCallback({
-          ...studentData,
-          solves: studentData.solves.push(problem),
-          score: studentData.score + 10,
-        });
+    return { studentRef, studentDoc, problemDoc };
+  };
+
+  const handleSubmit = async () => {
+    setTokenSuccess(false);
+
+    const { studentRef, studentDoc, problemDoc } = await validateToken();
+
+    if (studentRef && studentDoc && problemDoc) {
+      const newSolve = {
+        id: problemDoc.id,
+        submittedTime: Timestamp.now(),
+      };
+      updateDoc(studentRef, {
+        ...studentDoc,
+        solves: arrayUnion(newSolve),
+        score: increment(problemDoc.value),
       })
-      .catch((err) => {
-        console.error(err);
-        setTokenError(true);
-      });
+        .then(() => {
+          // success
+          setTokenError(false);
+          setTokenSuccess(true);
+          setInputToken("");
+          updateCallback({
+            ...studentDoc,
+            solves: studentDoc.solves.push(newSolve),
+            score: studentDoc.score + problemDoc.value,
+          });
+          setPointsEarned(problemDoc.value);
+        })
+        .catch((err) => {
+          console.error(err);
+          setTokenError(true);
+        });
+    }
   };
 
   return (
-    <Box
-      className="SubmitToken"
-      padding={6}
-      textAlign="center"
-    >
+    <Box className="SubmitToken" padding={6} textAlign="center">
       {tokenError && (
         <AlertBox
           type="error"
@@ -134,14 +163,14 @@ const SubmitToken = (props: SubmitTokenProps) => {
         <AlertBox
           type="success"
           title="Yay!"
-          description="You have earned 10 points"
+          description={`You have earned ${pointsEarned} points`}
           onClose={() => setTokenSuccess(false)}
         />
       )}
       <Heading as="h1" size="xl" mb={4}>
         Submit token
       </Heading>
-      
+
       <VStack className="submitTokenForm">
         <Grid
           templateColumns="repeat(8, 1fr)"
@@ -165,7 +194,7 @@ const SubmitToken = (props: SubmitTokenProps) => {
             </GridItem>
           </>
         </Grid>
-        
+
         <Button colorScheme="teal" onClick={handleSubmit}>
           Submit
         </Button>

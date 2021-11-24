@@ -17,8 +17,20 @@ import {
   ModalContent,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import { collection, doc, DocumentData, getDoc, getDocs, setDoc } from "firebase/firestore";
-import { getAuth, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
+import {
+  collection,
+  doc,
+  DocumentData,
+  getDoc,
+  getDocs,
+  setDoc,
+} from "firebase/firestore";
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  User,
+} from "firebase/auth";
 import { db } from "./firebase";
 import Leaderboard from "./components/Leaderboard";
 import SubmitToken from "./components/SubmitToken";
@@ -26,21 +38,26 @@ import SubmitToken from "./components/SubmitToken";
 function App() {
   const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loggedInUsername, setLoggedInUsername] = useState<string|null>("");
-  const [data, setData] = useState<DocumentData[]>([]);
+  const [loggedInUsername, setLoggedInUsername] = useState<string | null>("");
+  const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
+  const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
 
-  const getFirestoreData = async () => {
-    const querySnapshot = await getDocs(collection(db, "students"));
-    let receivedData: DocumentData[] = [];
-    console.log(querySnapshot);
-    querySnapshot.forEach((doc) => {
-      const studentData = doc.data();
-      receivedData = [...receivedData, studentData];
-    });
-    setData(receivedData);
+  const queryDbCollection = async (collectionName: string) => {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    return Array.from(querySnapshot.docs.map((el) => el.data()));
+  };
+
+  const getDbStudentData = async () => {
+    const receivedData = await queryDbCollection("students");
+    setStudentsData(receivedData);
+  };
+
+  const getDbProblemData = async () => {
+    const receivedData = await queryDbCollection("problems");
+    setProblemsData(receivedData);
   };
 
   const createUser = async (user: User) => {
@@ -55,7 +72,7 @@ function App() {
       })
         .then(() => {
           console.log("set doc success");
-          getFirestoreData();
+          getDbStudentData();
         })
         .catch((err) => console.error(err));
     }
@@ -96,18 +113,20 @@ function App() {
 
   const updateLocalStudentData = (newStudentData: DocumentData) => {
     const newData: DocumentData[] = [];
-    data.forEach((studentData) => {
+    studentsData.forEach((studentData) => {
       if (studentData.id === newStudentData.id) {
         newData.push(newStudentData);
       } else {
         newData.push(studentData);
       }
     });
-    setData(newData);
+    setStudentsData(newData);
   };
 
   useEffect(() => {
-    getFirestoreData();
+    getDbStudentData();
+    getDbProblemData();
+    // eslint-disable-next-line
   }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -169,7 +188,12 @@ function App() {
           <ModalOverlay />
           <ModalContent>
             <ModalCloseButton />
-            <SubmitToken db={db} updateCallback={updateLocalStudentData} successCallback={onClose} />
+            <SubmitToken
+              db={db}
+              problemsData={problemsData}
+              updateCallback={updateLocalStudentData}
+              successCallback={onClose}
+            />
           </ModalContent>
         </Modal>
         <Flex justifyContent="center">
@@ -177,7 +201,7 @@ function App() {
             Who is the informatics supreme leader at PLC?
           </Heading>
         </Flex>
-        <Leaderboard data={data} />
+        <Leaderboard data={studentsData} />
       </VStack>
     </div>
   );
