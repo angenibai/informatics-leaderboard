@@ -6,8 +6,11 @@ import {
   Flex,
   Box,
   Avatar,
+  LinkBox,
+  LinkOverlay,
 } from "@chakra-ui/react";
 import { DocumentData } from "@firebase/firestore";
+import { Link } from "react-router-dom";
 
 interface LeaderboardProps {
   data: DocumentData[];
@@ -27,19 +30,24 @@ const Leaderboard = (props: LeaderboardProps) => {
 
   useEffect(() => {
     setSortedData(createSortedData(data));
+    console.log(sortedData);
   }, [data]);
 
   return (
     <VStack divider={<StackDivider borderColor="gray.200" />} align="stretch">
       {sortedData.map((info, idx) => (
-        <Flex key={idx} alignItems="center">
-          <Box>
-            <Avatar size="sm" name={info.name} src={info.photoURL} />
-          </Box>
-          <Box p="2">{info.name}</Box>
-          <Spacer />
-          <Box>{info.score}</Box>
-        </Flex>
+        <LinkBox key={idx}>
+          <Flex alignItems="center">
+            <Box>
+              <Avatar size="sm" name={info.name} src={info.photoURL} />
+            </Box>
+            <LinkOverlay as={Link} to={`/profile/${info.id}`}>
+              <Box p="2">{info.name}</Box>
+            </LinkOverlay>
+            <Spacer />
+            <Box>{info.score}</Box>
+          </Flex>
+        </LinkBox>
       ))}
     </VStack>
   );
