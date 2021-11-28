@@ -33,12 +33,18 @@ import {
 } from "firebase/auth";
 import { db } from "./firebase";
 import { QueryClient, QueryClientProvider } from "react-query";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
 import SubmitToken from "./components/SubmitToken";
 import ProfilePage from "./pages/ProfilePage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import NotFound from "./components/NotFound";
+import Home from "./pages/Home";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -75,7 +81,6 @@ function App() {
         solves: [],
       })
         .then(() => {
-          console.log("set doc success");
           getDbStudentData();
         })
         .catch((err) => console.error(err));
@@ -128,9 +133,9 @@ function App() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <div className="App">
-        <Router>
+    <Router>
+      <QueryClientProvider client={queryClient}>
+        <div className="App">
           <Flex className="navbar" p={4}>
             <Box p="2">
               <RouterLink to="/">
@@ -199,13 +204,27 @@ function App() {
           >
             <Routes>
               <Route path="*" element={<NotFound />} />
-              <Route path="/" element={<LeaderboardPage />} />
-              <Route path="/profile/:studentId" element={<ProfilePage />} />
+              <Route
+                path="/"
+                element={auth.currentUser ? <LeaderboardPage /> : <Home />}
+              />
+              <Route
+                path="/leaderboard"
+                element={
+                  auth.currentUser ? <LeaderboardPage /> : <Navigate to="/" />
+                }
+              />
+              <Route
+                path="/profile/:studentId"
+                element={
+                  auth.currentUser ? <ProfilePage /> : <Navigate to="/" />
+                }
+              />
             </Routes>
           </VStack>
-        </Router>
-      </div>
-    </QueryClientProvider>
+        </div>
+      </QueryClientProvider>
+    </Router>
   );
 }
 

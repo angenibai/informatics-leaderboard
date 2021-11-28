@@ -10,12 +10,21 @@ import {
   Spinner,
   Text,
 } from "@chakra-ui/react";
+import { getAuth } from "@firebase/auth";
 import { collection, DocumentData } from "@firebase/firestore";
 import { useFirestoreQueryData } from "@react-query-firebase/firestore";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 
 const Leaderboard = () => {
+  const auth = getAuth();
+  const navigate = useNavigate();
+  auth.onAuthStateChanged(() => {
+    if (!auth.currentUser) {
+      navigate("/", { replace: true });
+    }
+  });
+
   const studentsRef = collection(db, "students");
   const query = useFirestoreQueryData(["students"], studentsRef, {
     subscribe: true,
@@ -47,7 +56,7 @@ const Leaderboard = () => {
   return (
     <VStack divider={<StackDivider borderColor="gray.200" />} align="stretch">
       {createSortedData(query.data).map((info, idx) => (
-        <LinkBox key={idx}>
+        <LinkBox key={`student-${info.id}`}>
           <Flex
             alignItems="center"
             _hover={{ backgroundColor: "teal.50" }}
