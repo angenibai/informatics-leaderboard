@@ -14,6 +14,7 @@ import {
   ModalOverlay,
   ModalCloseButton,
   ModalContent,
+  Avatar,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
 import {
@@ -35,13 +36,12 @@ import { QueryClient, QueryClientProvider } from "react-query";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
 import SubmitToken from "./components/SubmitToken";
-import ProfilePage from "./components/ProfilePage";
-import LeaderboardPage from "./components/LeaderboardPage";
+import ProfilePage from "./pages/ProfilePage";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import NotFound from "./components/NotFound";
 
 function App() {
-  const [admin, setAdmin] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [loggedInUsername, setLoggedInUsername] = useState<string | null>("");
   const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
   const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
@@ -85,17 +85,9 @@ function App() {
   auth.onAuthStateChanged((user) => {
     if (user) {
       setLoggedIn(true);
-      if (auth.currentUser) {
-        auth.currentUser.getIdTokenResult().then((idTokenResult) => {
-          setAdmin(idTokenResult.claims.admin as unknown as boolean);
-        });
-      }
       createUser(user);
-      setLoggedInUsername(user.displayName);
     } else {
       setLoggedIn(false);
-      setAdmin(false);
-      setLoggedInUsername("");
     }
   });
 
@@ -147,11 +139,22 @@ function App() {
             </Box>
             <Spacer />
             {loggedIn && (
-              <Box mr={1}>
-                <Button colorScheme="teal" onClick={onOpen}>
-                  Submit token
-                </Button>
-              </Box>
+              <>
+                <Flex mr={4} flexDirection="column" justifyContent="center">
+                  <RouterLink to={`/profile/${auth.currentUser?.uid}`}>
+                    <Avatar
+                      size="sm"
+                      name={auth.currentUser?.displayName || ""}
+                      src={auth.currentUser?.photoURL || ""}
+                    />
+                  </RouterLink>
+                </Flex>
+                <Box mr={1}>
+                  <Button colorScheme="teal" onClick={onOpen}>
+                    Submit token
+                  </Button>
+                </Box>
+              </>
             )}
             <Box mr={1}>
               {loggedIn ? (
@@ -194,19 +197,8 @@ function App() {
             alignItems="stretch"
             spacing={8}
           >
-            {loggedIn && (
-              <Heading as="h2" size="l">
-                Hello, {loggedInUsername}
-              </Heading>
-            )}
-            {admin && (
-              <>
-                <Heading as="h1" size="l">
-                  You are an admin
-                </Heading>
-              </>
-            )}
             <Routes>
+              <Route path="*" element={<NotFound />} />
               <Route path="/" element={<LeaderboardPage />} />
               <Route path="/profile/:studentId" element={<ProfilePage />} />
             </Routes>
