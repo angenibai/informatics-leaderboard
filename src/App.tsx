@@ -205,19 +205,16 @@ function App() {
             </>
           )}
           <Routes>
-            <Route
-              path="/"
-              element={<LeaderboardPage studentsData={studentsData} />}
-            />
+            <Route path="/" element={<LeaderboardPage />} />
+            {/*
             <Route
               path="/profile/:studentId"
               element={
                 <ProfilePage
-                  studentsData={studentsData}
-                  problemsData={problemsData}
                 />
               }
             />
+            */}
           </Routes>
         </VStack>
       </Router>

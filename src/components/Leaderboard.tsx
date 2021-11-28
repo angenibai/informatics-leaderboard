@@ -8,17 +8,34 @@ import {
   Avatar,
   LinkBox,
   LinkOverlay,
+  Spinner,
 } from "@chakra-ui/react";
-import { DocumentData } from "@firebase/firestore";
+import { collection, DocumentData, query } from "@firebase/firestore";
+import { useFirestoreQueryData } from "@react-query-firebase/firestore";
 import { Link } from "react-router-dom";
+import { db } from '../firebase';
 
 interface LeaderboardProps {
   data: DocumentData[];
 }
 
-const Leaderboard = (props: LeaderboardProps) => {
-  const { data } = props;
+const Leaderboard = () => {
   const [sortedData, setSortedData] = useState<DocumentData[]>([]);
+
+  const studentsRef = collection(db, "students");
+  const query = useFirestoreQueryData(["students"], studentsRef, {
+    subscribe: true,
+  });
+
+  if (query.isLoading) {
+    return (
+      <Box>
+        <Spinner color="teal" />
+      </Box>
+    )
+  }
+
+  const data = query.data;
 
   const createSortedData = (data: DocumentData[]) => {
     // data comes in as list of student objects
@@ -29,6 +46,7 @@ const Leaderboard = (props: LeaderboardProps) => {
   };
 
   useEffect(() => {
+    console.log('data has updated');
     setSortedData(createSortedData(data));
     console.log(sortedData);
   }, [data]);

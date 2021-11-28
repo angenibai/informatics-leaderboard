@@ -6,8 +6,7 @@ interface LeaderboardPageProps {
   studentsData: DocumentData[];
 }
 
-const LeaderboardPage = (props: LeaderboardPageProps) => {
-  const { studentsData } = props;
+const LeaderboardPage = () => {
   return (
     <Box className="LeaderboardPage">
       <Flex justifyContent="center">
@@ -15,7 +14,7 @@ const LeaderboardPage = (props: LeaderboardPageProps) => {
           Who is the informatics master at PLC?
         </Heading>
       </Flex>
-      <Leaderboard data={studentsData} />
+      <Leaderboard />
     </Box>
   );
 };

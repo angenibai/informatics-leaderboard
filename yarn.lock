@@ -2689,6 +2689,16 @@
     prop-types "^15.7.2"
     tslib "^2.1.0"
 
+"@react-query-firebase/auth@^0.3.4":
+  version "0.3.4"
+  resolved "https://registry.yarnpkg.com/@react-query-firebase/auth/-/auth-0.3.4.tgz#89c30f2e63d984ad1821a684e4c4e3644b069ff9"
+  integrity sha512-t/NyKcGDtL5PkcMXdJPXjSzJ3ujBU5mDsxWORlZ8Cx7sSn/Os30gHmvVCh/SRYIET9kH0fSFefLY7TaL+qfaiQ==
+
+"@react-query-firebase/firestore@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@react-query-firebase/firestore/-/firestore-0.4.2.tgz#6ae52768715aa0a5c0d903dd4fd953ed417ba635"
+  integrity sha512-7eYp905+sfBRcBTdj7W7BAc3bI3V0D0kKca4/juOTnN4gyoNyaCNOCjLPY467dTq325hGs7BX0ol7Pw3JENdHA==
+
 "@rollup/plugin-node-resolve@^7.1.1":
   version "7.1.3"
   resolved "https://registry.yarnpkg.com/@rollup/plugin-node-resolve/-/plugin-node-resolve-7.1.3.tgz#80de384edfbd7bfc9101164910f86078151a3eca"
