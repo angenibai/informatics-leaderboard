@@ -14,6 +14,7 @@ import {
   useColorModeValue,
   Spinner,
   Text,
+  Heading,
 } from "@chakra-ui/react";
 import {
   collection,
@@ -86,6 +87,8 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
     }
     const sortedProblems = [...onlyProblems];
     sortedProblems.sort((a, b) => Number(a.problem) - Number(b.problem));
+
+    // set up all levels
     const highestLevel = Math.floor(
       Number(sortedProblems[sortedProblems.length - 1].problem) / 100
     );
@@ -100,6 +103,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
       });
     }
 
+    // add details for each problem
     sortedProblems.forEach((problem) => {
       const level = Math.floor(Number(problem.problem) / 100);
       const solvesFiltered = student.solves.filter(
@@ -109,7 +113,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
       if (!accordionData[level - 1]) {
         return;
       }
-      accordionData[level - 1]?.problems?.push({
+      accordionData[level - 1].problems.push({
         problem: problem.problem,
         name: problem.name,
         status: solveStatus,
@@ -135,6 +139,9 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
 
   return (
     <Box className="ProblemsProgress">
+      <Heading textAlign="left" as="h3" size="lg" mb={4}>
+        Progress
+      </Heading>
       {studentQuery.isLoading ||
       problemsQuery.isLoading ||
       !studentQuery.data ||

@@ -48,7 +48,13 @@ const Leaderboard = () => {
     <VStack divider={<StackDivider borderColor="gray.200" />} align="stretch">
       {createSortedData(query.data).map((info, idx) => (
         <LinkBox key={idx}>
-          <Flex alignItems="center">
+          <Flex
+            alignItems="center"
+            _hover={{ backgroundColor: "teal.50" }}
+            p={1}
+            pl={4}
+            pr={4}
+          >
             <Box>
               <Avatar size="sm" name={info.name} src={info.photoURL} />
             </Box>
