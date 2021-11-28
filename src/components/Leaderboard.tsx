@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import {
   VStack,
   StackDivider,
@@ -9,19 +8,14 @@ import {
   LinkBox,
   LinkOverlay,
   Spinner,
+  Text,
 } from "@chakra-ui/react";
-import { collection, DocumentData, query } from "@firebase/firestore";
+import { collection, DocumentData } from "@firebase/firestore";
 import { useFirestoreQueryData } from "@react-query-firebase/firestore";
 import { Link } from "react-router-dom";
-import { db } from '../firebase';
-
-interface LeaderboardProps {
-  data: DocumentData[];
-}
+import { db } from "../firebase";
 
 const Leaderboard = () => {
-  const [sortedData, setSortedData] = useState<DocumentData[]>([]);
-
   const studentsRef = collection(db, "students");
   const query = useFirestoreQueryData(["students"], studentsRef, {
     subscribe: true,
@@ -30,30 +24,29 @@ const Leaderboard = () => {
   if (query.isLoading) {
     return (
       <Box>
-        <Spinner color="teal" />
+        <Spinner mt={4} color="teal" />
       </Box>
-    )
+    );
   }
 
-  const data = query.data;
+  if (query.error || !query.data) {
+    return (
+      <Box>
+        <Text>Error while loading</Text>
+      </Box>
+    );
+  }
 
   const createSortedData = (data: DocumentData[]) => {
-    // data comes in as list of student objects
     const sortedData: DocumentData[] = [];
     data.forEach((x) => sortedData.push(x));
     sortedData.sort((a, b) => b.score - a.score);
     return sortedData;
   };
 
-  useEffect(() => {
-    console.log('data has updated');
-    setSortedData(createSortedData(data));
-    console.log(sortedData);
-  }, [data]);
-
   return (
     <VStack divider={<StackDivider borderColor="gray.200" />} align="stretch">
-      {sortedData.map((info, idx) => (
+      {createSortedData(query.data).map((info, idx) => (
         <LinkBox key={idx}>
           <Flex alignItems="center">
             <Box>

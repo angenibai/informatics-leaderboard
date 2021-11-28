@@ -1,34 +1,44 @@
 import { Box, Heading } from "@chakra-ui/react";
-import { DocumentData } from "@firebase/firestore";
+import { query, collection, where, limit } from "@firebase/firestore";
+import { useFirestoreQuery } from "@react-query-firebase/firestore";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { db } from "../firebase";
 import ProblemsProgress from "./ProblemsProgress";
 
-interface ProfilePageProps {
-  studentsData: DocumentData[];
-  problemsData: DocumentData[];
-}
-
-const ProfilePage = (props: ProfilePageProps) => {
-  const { studentId } = useParams();
-  const { studentsData, problemsData } = props;
-  const [thisStudent, setThisStudent] = useState<DocumentData>({});
+const ProfilePage = () => {
+  // just checks if student exists
   const [errorMessage, setErrorMessage] = useState("");
+  const { studentId = "" } = useParams();
+  if (!studentId) {
+    setErrorMessage("Invalid id");
+  }
 
-  useEffect(() => {
-    const studentsFiltered = studentsData.filter(
-      (student) => student.id === studentId
-    );
-    if (studentsFiltered.length !== 1) {
-      setErrorMessage("Invalid link");
-      return;
+  const studentRef = query(
+    collection(db, "students"),
+    where("id", "==", studentId),
+    limit(1)
+  );
+
+  const nameQuery = useFirestoreQuery(
+    ["students", studentId],
+    studentRef,
+    { subscribe: true },
+    {
+      select(snapshot) {
+        if (snapshot.empty) {
+          return null;
+        }
+        return snapshot.docs[0].data().name;
+      },
     }
-    setThisStudent(studentsFiltered[0]);
-  }, []);
+  );
 
   useEffect(() => {
-    console.log("student has been set");
-  }, [thisStudent])
+    if (nameQuery.isError) {
+      setErrorMessage("Invalid link");
+    }
+  }, [nameQuery]);
 
   return (
     <Box className="ProfilePage">
@@ -36,11 +46,8 @@ const ProfilePage = (props: ProfilePageProps) => {
         <Heading>{errorMessage}</Heading>
       ) : (
         <>
-          <Heading mb={4}>{thisStudent.name}</Heading>
-          <ProblemsProgress
-            student={thisStudent}
-            problemsData={problemsData}
-          />
+          <Heading mb={4}>{nameQuery.data}</Heading>
+          <ProblemsProgress studentId={studentId} />
         </>
       )}
     </Box>

@@ -12,13 +12,24 @@ import {
   Th,
   Td,
   useColorModeValue,
+  Spinner,
+  Text,
 } from "@chakra-ui/react";
-import { DocumentData } from "@firebase/firestore";
-import { useEffect, useState } from "react";
+import {
+  collection,
+  DocumentData,
+  query,
+  where,
+  limit,
+} from "@firebase/firestore";
+import {
+  useFirestoreQuery,
+  useFirestoreQueryData,
+} from "@react-query-firebase/firestore";
+import { db } from "../firebase";
 
 interface ProblemsProgressProps {
-  student: DocumentData;
-  problemsData: DocumentData[];
+  studentId: string;
 }
 
 interface problemSolveInfo {
@@ -35,21 +46,50 @@ interface levelSolveInfo {
 }
 
 const ProblemsProgress = (props: ProblemsProgressProps) => {
-  const { student, problemsData } = props;
-  const onlyProblems = problemsData.filter((el) => el.type === "problem");
-  const [accordionData, setAccordionData] = useState<levelSolveInfo[]>([]);
-
+  const { studentId } = props;
   const correctColor = useColorModeValue("teal.100", "teal.400");
 
+  const studentRef = query(
+    collection(db, "students"),
+    where("id", "==", studentId),
+    limit(1)
+  );
+
+  const studentQuery = useFirestoreQuery(
+    ["students", studentId],
+    studentRef,
+    { subscribe: true },
+    {
+      select(snapshot) {
+        if (snapshot.empty) {
+          return null;
+        }
+        return snapshot.docs[0].data();
+      },
+    }
+  );
+
+  const problemsRef = query(
+    collection(db, "problems"),
+    where("type", "==", "problem")
+  );
+  const problemsQuery = useFirestoreQueryData(["problems"], problemsRef, {
+    subscribe: true,
+  });
+
   const createDataForAccordion = (
-    student: DocumentData,
-    onlyProblems: DocumentData[]
+    student: DocumentData | null,
+    onlyProblems: DocumentData[] | null
   ) => {
-    onlyProblems.sort((a, b) => Number(a.problem) - Number(b.problem));
+    if (!student || !onlyProblems) {
+      return [];
+    }
+    const sortedProblems = [...onlyProblems];
+    sortedProblems.sort((a, b) => Number(a.problem) - Number(b.problem));
     const highestLevel = Math.floor(
-      Number(onlyProblems[onlyProblems.length - 1].problem) / 100
+      Number(sortedProblems[sortedProblems.length - 1].problem) / 100
     );
-    const lowestLevel = Math.floor(Number(onlyProblems[0].problem) / 100);
+    const lowestLevel = Math.floor(Number(sortedProblems[0].problem) / 100);
     const accordionData: levelSolveInfo[] = [];
     for (let level = lowestLevel; level <= highestLevel; level++) {
       accordionData.push({
@@ -60,7 +100,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
       });
     }
 
-    onlyProblems.forEach((problem) => {
+    sortedProblems.forEach((problem) => {
       const level = Math.floor(Number(problem.problem) / 100);
       const solvesFiltered = student.solves.filter(
         (el: { id: string }) => el.id === problem.id
@@ -85,53 +125,63 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
     return accordionData;
   };
 
-  useEffect(() => {
-    if (student.solves) {
-      console.log(student.solves);
-      setAccordionData(createDataForAccordion(student, onlyProblems));
-    }
-  }, [student]);
+  if (studentQuery.isError || problemsQuery.isError) {
+    return (
+      <Box>
+        <Text>Error while loading profile</Text>
+      </Box>
+    );
+  }
 
   return (
     <Box className="ProblemsProgress">
-      <Accordion allowMultiple>
-        {accordionData.map((levelData, levelIdx) => (
-          <AccordionItem key={`Level${levelIdx + 1}`}>
-            <AccordionButton>
-              <Box flex={1} textAlign="left">
-                {levelData.level}
-              </Box>
-              <Box>{Math.round(levelData.solvedPercentage)}%</Box>
-              <AccordionIcon />
-            </AccordionButton>
-            <AccordionPanel>
-              <Table>
-                <Thead>
-                  <Tr>
-                    <Th>Number</Th>
-                    <Th>Name</Th>
-                    <Th>Complete?</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {levelData.problems.map((problemInfo, problemIdx) => (
-                    <Tr
-                      key={`Level${levelIdx}-${problemIdx}`}
-                      backgroundColor={
-                        problemInfo.status ? correctColor : "default"
-                      }
-                    >
-                      <Td>{problemInfo.problem}</Td>
-                      <Td>{problemInfo.name}</Td>
-                      <Td>{problemInfo.status ? "Yes" : "No"}</Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
-            </AccordionPanel>
-          </AccordionItem>
-        ))}
-      </Accordion>
+      {studentQuery.isLoading ||
+      problemsQuery.isLoading ||
+      !studentQuery.data ||
+      !problemsQuery.data ? (
+        <Spinner mt={4} color="teal" />
+      ) : (
+        <Accordion allowMultiple>
+          {createDataForAccordion(studentQuery.data, problemsQuery.data).map(
+            (levelData, levelIdx) => (
+              <AccordionItem key={`Level${levelIdx + 1}`}>
+                <AccordionButton>
+                  <Box flex={1} textAlign="left">
+                    {levelData.level}
+                  </Box>
+                  <Box>{Math.round(levelData.solvedPercentage)}%</Box>
+                  <AccordionIcon />
+                </AccordionButton>
+                <AccordionPanel>
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>Number</Th>
+                        <Th>Name</Th>
+                        <Th>Complete?</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {levelData.problems.map((problemInfo, problemIdx) => (
+                        <Tr
+                          key={`Level${levelIdx}-${problemIdx}`}
+                          backgroundColor={
+                            problemInfo.status ? correctColor : "default"
+                          }
+                        >
+                          <Td>{problemInfo.problem}</Td>
+                          <Td>{problemInfo.name}</Td>
+                          <Td>{problemInfo.status ? "Yes" : "No"}</Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </AccordionPanel>
+              </AccordionItem>
+            )
+          )}
+        </Accordion>
+      )}
     </Box>
   );
 };

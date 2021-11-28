@@ -186,7 +186,7 @@ const SubmitToken = (props: SubmitTokenProps) => {
             <GridItem colStart={2} colSpan={6}>
               <Input
                 aria-label="Token input"
-                placeholder="101-275976081ce1abx67709eb3c388b5e14531022e5q137502e264776e1a6a11595"
+                placeholder="101-2a75e9"
                 isRequired
                 value={inputToken}
                 onChange={handleTokenChange}

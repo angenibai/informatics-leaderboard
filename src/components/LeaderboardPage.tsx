@@ -1,10 +1,5 @@
 import { Flex, Heading, Box } from "@chakra-ui/react";
-import { DocumentData } from "@firebase/firestore";
 import Leaderboard from "./Leaderboard";
-
-interface LeaderboardPageProps {
-  studentsData: DocumentData[];
-}
 
 const LeaderboardPage = () => {
   return (
