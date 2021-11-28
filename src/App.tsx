@@ -144,9 +144,6 @@ function App() {
             </RouterLink>
           </Box>
           <Spacer />
-          <Flex mr={5} alignItems="center">
-            {loggedIn && <Text>Hello, {loggedInUsername}</Text>}
-          </Flex>
           {loggedIn && (
             <Box mr={1}>
               <Button colorScheme="teal" onClick={onOpen}>
@@ -195,6 +192,11 @@ function App() {
           alignItems="stretch"
           spacing={8}
         >
+          {loggedIn && (
+            <Heading as="h2" size="l">
+              Hello, {loggedInUsername}
+            </Heading>
+          )}
           {admin && (
             <>
               <Heading as="h1" size="l">

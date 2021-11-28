@@ -45,23 +45,31 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
     student: DocumentData,
     onlyProblems: DocumentData[]
   ) => {
-    const accordionData: levelSolveInfo[] = [];
     onlyProblems.sort((a, b) => Number(a.problem) - Number(b.problem));
+    const highestLevel = Math.floor(
+      Number(onlyProblems[onlyProblems.length - 1].problem) / 100
+    );
+    const lowestLevel = Math.floor(Number(onlyProblems[0].problem) / 100);
+    const accordionData: levelSolveInfo[] = [];
+    for (let level = lowestLevel; level <= highestLevel; level++) {
+      accordionData.push({
+        level: `Level ${level}`,
+        problems: [],
+        solved: 0,
+        solvedPercentage: 0,
+      });
+    }
+
     onlyProblems.forEach((problem) => {
       const level = Math.floor(Number(problem.problem) / 100);
-      if (accordionData.length < level) {
-        accordionData.push({
-          level: `Level ${level}`,
-          problems: [],
-          solved: 0,
-          solvedPercentage: 0,
-        });
-      }
       const solvesFiltered = student.solves.filter(
         (el: { id: string }) => el.id === problem.id
       );
       const solveStatus = solvesFiltered.length === 1;
-      accordionData[level - 1].problems.push({
+      if (!accordionData[level - 1]) {
+        return;
+      }
+      accordionData[level - 1]?.problems?.push({
         problem: problem.problem,
         name: problem.name,
         status: solveStatus,
@@ -79,6 +87,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
 
   useEffect(() => {
     if (student.solves) {
+      console.log(student.solves);
       setAccordionData(createDataForAccordion(student, onlyProblems));
     }
   }, [student]);
@@ -87,9 +96,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
     <Box className="ProblemsProgress">
       <Accordion allowMultiple>
         {accordionData.map((levelData, levelIdx) => (
-          <AccordionItem
-            key={`Level${levelIdx + 1}`}
-          >
+          <AccordionItem key={`Level${levelIdx + 1}`}>
             <AccordionButton>
               <Box flex={1} textAlign="left">
                 {levelData.level}

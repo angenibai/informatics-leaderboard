@@ -12,7 +12,7 @@ const LeaderboardPage = (props: LeaderboardPageProps) => {
     <Box className="LeaderboardPage">
       <Flex justifyContent="center">
         <Heading as="h1" size="xl" mb={4} maxWidth="500px">
-          Who is the informatics supreme leader at PLC?
+          Who is the informatics master at PLC?
         </Heading>
       </Flex>
       <Leaderboard data={studentsData} />
