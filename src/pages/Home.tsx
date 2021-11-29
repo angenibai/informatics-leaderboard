@@ -1,6 +1,11 @@
 import { Flex, Box, Heading, Button } from "@chakra-ui/react";
 
-const Home = () => {
+interface HomeProps {
+  loginCallback: () => void;
+}
+
+const Home = (props: HomeProps) => {
+  const { loginCallback } = props;
  
   return (
     <Flex
@@ -16,7 +21,7 @@ const Home = () => {
         </Heading>
       </Box>
       <Box>
-        <Button colorScheme="teal" size="lg">
+        <Button colorScheme="teal" size="lg" onClick={loginCallback}>
           Log in
         </Button>
       </Box>
