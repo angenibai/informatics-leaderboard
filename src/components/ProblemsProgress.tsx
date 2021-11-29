@@ -75,7 +75,7 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
     collection(db, "problems"),
     where("type", "==", "problem")
   );
-  const problemsQuery = useFirestoreQueryData(["problems"], problemsRef, {
+  const problemsQuery = useFirestoreQueryData(["onlyProblems"], problemsRef, {
     subscribe: true,
   });
 

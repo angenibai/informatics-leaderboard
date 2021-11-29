@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Flex,
   Box,
@@ -17,14 +17,7 @@ import {
   Avatar,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import {
-  collection,
-  doc,
-  DocumentData,
-  getDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   getAuth,
   signInWithPopup,
@@ -49,27 +42,10 @@ import Home from "./pages/Home";
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
-  const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
   const queryClient = new QueryClient();
-
-  const queryDbCollection = async (collectionName: string) => {
-    const querySnapshot = await getDocs(collection(db, collectionName));
-    return Array.from(querySnapshot.docs.map((el) => el.data()));
-  };
-
-  const getDbStudentData = async () => {
-    const receivedData = await queryDbCollection("students");
-    setStudentsData(receivedData);
-  };
-
-  const getDbProblemData = async () => {
-    const receivedData = await queryDbCollection("problems");
-    setProblemsData(receivedData);
-  };
 
   const createUser = async (user: User) => {
     getDoc(doc(db, "students", user.uid))
@@ -81,13 +57,9 @@ function App() {
             photoURL: user.photoURL,
             score: 0,
             solves: [],
-          })
-            .then(() => {
-              getDbStudentData();
-            })
-            .catch((err) => {
-              console.error(err);
-            });
+          }).catch((err) => {
+            console.error(err);
+          });
         }
       })
       .catch((err) => {
@@ -125,24 +97,6 @@ function App() {
       console.error(`${errorCode}: ${errorMessage}`);
     });
   };
-
-  const updateLocalStudentData = (newStudentData: DocumentData) => {
-    const newData: DocumentData[] = [];
-    studentsData.forEach((studentData) => {
-      if (studentData.id === newStudentData.id) {
-        newData.push(newStudentData);
-      } else {
-        newData.push(studentData);
-      }
-    });
-    setStudentsData(newData);
-  };
-
-  useEffect(() => {
-    getDbStudentData();
-    getDbProblemData();
-    // eslint-disable-next-line
-  }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -199,12 +153,7 @@ function App() {
             <ModalOverlay />
             <ModalContent>
               <ModalCloseButton />
-              <SubmitToken
-                db={db}
-                problemsData={problemsData}
-                updateCallback={updateLocalStudentData}
-                successCallback={onClose}
-              />
+              <SubmitToken db={db} successCallback={onClose} />
             </ModalContent>
           </Modal>
           <VStack

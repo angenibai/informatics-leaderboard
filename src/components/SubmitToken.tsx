@@ -8,12 +8,13 @@ import {
   Button,
   Grid,
   GridItem,
+  Spinner,
 } from "@chakra-ui/react";
 import { getAuth } from "@firebase/auth";
 import {
   arrayUnion,
+  collection,
   doc,
-  DocumentData,
   Firestore,
   getDoc,
   increment,
@@ -21,16 +22,15 @@ import {
   updateDoc,
 } from "@firebase/firestore";
 import AlertBox from "./AlertBox";
+import { useFirestoreQueryData } from "@react-query-firebase/firestore";
 
 interface SubmitTokenProps {
   db: Firestore;
-  problemsData: DocumentData[];
-  updateCallback: (newStudentData: DocumentData) => void;
   successCallback: () => void;
 }
 
 const SubmitToken = (props: SubmitTokenProps) => {
-  const { db, problemsData, updateCallback } = props;
+  const { db } = props;
 
   const [inputToken, setInputToken] = useState("");
   const [tokenError, setTokenError] = useState(false);
@@ -45,12 +45,36 @@ const SubmitToken = (props: SubmitTokenProps) => {
   const auth = getAuth();
   const user = auth.currentUser;
 
+  const problemsRef = collection(db, "problems");
+  const problemsQuery = useFirestoreQueryData(["allProblems"], problemsRef);
+  if (problemsQuery.isLoading) {
+    return (
+      <Box className="SubmitToken" padding={6} textAlign="center">
+        <Spinner colorScheme="teal" />
+      </Box>
+    );
+  }
+
+  if (problemsQuery.error) {
+    return (
+      <Box className="SubmitToken" padding={6} textAlign="center">
+        <Text>Error loading problems</Text>
+      </Box>
+    );
+  }
+
   const validateToken = async () => {
     let returnVals = {
       studentRef: null,
       studentDoc: null,
       problemDoc: null,
     };
+
+    if (!problemsQuery.data) {
+      setTokenError(true);
+      setErrorMessage("Problem data still loading");
+      return returnVals;
+    }
 
     if (!inputToken) {
       // invalid input
@@ -85,7 +109,9 @@ const SubmitToken = (props: SubmitTokenProps) => {
     }
 
     // get problem id
-    const problemDocs = problemsData.filter((el) => el.problem === problem);
+    const problemDocs = problemsQuery.data.filter(
+      (el) => el.problem === problem
+    );
     if (problemDocs.length !== 1) {
       // either no or more than one matching problem
       setTokenError(true);
@@ -132,15 +158,10 @@ const SubmitToken = (props: SubmitTokenProps) => {
       })
         .then(() => {
           // success
+          setPointsEarned(problemDoc.value);
           setTokenError(false);
           setTokenSuccess(true);
           setInputToken("");
-          updateCallback({
-            ...studentDoc,
-            solves: studentDoc.solves.push(newSolve),
-            score: studentDoc.score + problemDoc.value,
-          });
-          setPointsEarned(problemDoc.value);
         })
         .catch((err) => {
           console.error(err);
