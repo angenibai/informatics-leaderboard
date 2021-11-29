@@ -27,10 +27,10 @@ import {
 import { db } from "./firebase";
 import { QueryClient, QueryClientProvider } from "react-query";
 import {
-  BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  useNavigate,
 } from "react-router-dom";
 import { Link as RouterLink } from "react-router-dom";
 import SubmitToken from "./components/SubmitToken";
@@ -50,6 +50,7 @@ function App() {
   const createUser = async (user: User) => {
     getDoc(doc(db, "students", user.uid))
       .then((userDoc) => {
+        setLoginError("");
         if (!userDoc.exists()) {
           setDoc(doc(db, "students", user.uid), {
             id: user.uid,
@@ -63,7 +64,6 @@ function App() {
         }
       })
       .catch((err) => {
-        console.log("user does not have perms");
         auth.signOut();
         setLoginError("Please use your PLC email");
       });
@@ -72,6 +72,8 @@ function App() {
   const clearLoginError = () => {
     setLoginError("");
   };
+
+  const navigate = useNavigate();
 
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -91,121 +93,118 @@ function App() {
   };
 
   const logout = () => {
-    auth.signOut().catch((error) => {
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      console.error(`${errorCode}: ${errorMessage}`);
-    });
+    auth
+      .signOut()
+      .then((res) => navigate("/"))
+      .catch((error) => {
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.error(`${errorCode}: ${errorMessage}`);
+      });
   };
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   return (
-    <Router>
-      <QueryClientProvider client={queryClient}>
-        <div className="App">
-          <Flex className="navbar" p={4}>
-            <Box p="2">
-              <RouterLink to="/">
-                <Heading size="md">Informatics Leaderboard</Heading>
-              </RouterLink>
-            </Box>
-            <Spacer />
-            {loggedIn && (
-              <>
-                <Flex mr={4} flexDirection="column" justifyContent="center">
-                  <RouterLink to={`/profile/${auth.currentUser?.uid}`}>
-                    <Avatar
-                      size="sm"
-                      name={auth.currentUser?.displayName || ""}
-                      src={auth.currentUser?.photoURL || ""}
-                    />
-                  </RouterLink>
-                </Flex>
-                <Box mr={1}>
-                  <Button colorScheme="teal" onClick={onOpen}>
-                    Submit token
-                  </Button>
-                </Box>
-              </>
+    <QueryClientProvider client={queryClient}>
+      <div className="App">
+        <Flex className="navbar" p={4}>
+          <Box p="2">
+            <RouterLink to="/">
+              <Heading size="md">Informatics Leaderboard</Heading>
+            </RouterLink>
+          </Box>
+          <Spacer />
+          {loggedIn && (
+            <>
+              <Flex mr={4} flexDirection="column" justifyContent="center">
+                <RouterLink to={`/profile/${auth.currentUser?.uid}`}>
+                  <Avatar
+                    size="sm"
+                    name={auth.currentUser?.displayName || ""}
+                    src={auth.currentUser?.photoURL || ""}
+                  />
+                </RouterLink>
+              </Flex>
+              <Box mr={1}>
+                <Button colorScheme="teal" onClick={onOpen}>
+                  Submit token
+                </Button>
+              </Box>
+            </>
+          )}
+          <Box mr={1}>
+            {loggedIn ? (
+              <Button colorScheme="teal" variant="ghost" onClick={logout}>
+                Log out
+              </Button>
+            ) : (
+              <Button colorScheme="teal" variant="ghost" onClick={openAuth}>
+                Log in
+              </Button>
             )}
-            <Box mr={1}>
-              {loggedIn ? (
-                <Button colorScheme="teal" variant="ghost" onClick={logout}>
-                  Log out
-                </Button>
-              ) : (
-                <Button colorScheme="teal" variant="ghost" onClick={openAuth}>
-                  Log in
-                </Button>
-              )}
-            </Box>
-            <Box>
-              <IconButton
-                aria-label="Toggle dark mode"
-                variant="ghost"
-                icon={colorMode === "light" ? <SunIcon /> : <MoonIcon />}
-                onClick={toggleColorMode}
-              />
-            </Box>
-          </Flex>
-          <Modal isOpen={isOpen} onClose={onClose} size="xl">
-            <ModalOverlay />
-            <ModalContent>
-              <ModalCloseButton />
-              <SubmitToken db={db} successCallback={onClose} />
-            </ModalContent>
-          </Modal>
-          <VStack
-            className="appBody"
-            margin="auto"
-            maxW="700px"
-            width="90%"
-            textAlign="center"
-            alignItems="stretch"
-            spacing={8}
-          >
-            <Routes>
-              <Route path="*" element={<NotFound />} />
-              <Route
-                path="/"
-                element={
-                  auth.currentUser ? (
-                    <LeaderboardPage db={db} />
-                  ) : (
-                    <Home
-                      loginCallback={openAuth}
-                      loginError={loginError}
-                      clearLoginError={clearLoginError}
-                    />
-                  )
-                }
-              />
-              <Route
-                path="/leaderboard"
-                element={
-                  auth.currentUser ? (
-                    <LeaderboardPage db={db} />
-                  ) : (
-                    <Navigate to="/" />
-                  )
-                }
-              />
-              <Route
-                path="/profile/:studentId"
-                element={
-                  auth.currentUser ? (
-                    <ProfilePage db={db} />
-                  ) : (
-                    <Navigate to="/" />
-                  )
-                }
-              />
-            </Routes>
-          </VStack>
-        </div>
-      </QueryClientProvider>
-    </Router>
+          </Box>
+          <Box>
+            <IconButton
+              aria-label="Toggle dark mode"
+              variant="ghost"
+              icon={colorMode === "light" ? <SunIcon /> : <MoonIcon />}
+              onClick={toggleColorMode}
+            />
+          </Box>
+        </Flex>
+        <Modal isOpen={isOpen} onClose={onClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <ModalCloseButton />
+            <SubmitToken db={db} successCallback={onClose} />
+          </ModalContent>
+        </Modal>
+        <VStack
+          className="appBody"
+          margin="auto"
+          maxW="700px"
+          width="90%"
+          textAlign="center"
+          alignItems="stretch"
+          spacing={8}
+        >
+          <Routes>
+            <Route path="*" element={<NotFound />} />
+            <Route
+              path="/"
+              element={
+                auth.currentUser ? (
+                  <LeaderboardPage db={db} />
+                ) : (
+                  <Home
+                    loginCallback={openAuth}
+                    loginError={loginError}
+                    clearLoginError={clearLoginError}
+                  />
+                )
+              }
+            />
+            <Route
+              path="/leaderboard"
+              element={
+                auth.currentUser ? (
+                  <LeaderboardPage db={db} />
+                ) : (
+                  <Navigate to="/" />
+                )
+              }
+            />
+            <Route
+              path="/profile/:studentId"
+              element={
+                auth.currentUser ? <ProfilePage db={db} /> : <Navigate to="/" />
+              }
+            />
+          </Routes>
+        </VStack>
+      </div>
+    </QueryClientProvider>
   );
 }
 
