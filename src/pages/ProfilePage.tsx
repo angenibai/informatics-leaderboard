@@ -7,9 +7,8 @@ import {
   Firestore,
 } from "@firebase/firestore";
 import { useFirestoreQuery } from "@react-query-firebase/firestore";
-import { useNavigate, useParams } from "react-router";
+import { useParams } from "react-router";
 import ProblemsProgress from "../components/ProblemsProgress";
-import { getAuth } from "@firebase/auth";
 
 interface ProfilePageProps {
   db: Firestore;
@@ -18,15 +17,6 @@ interface ProfilePageProps {
 const ProfilePage = (props: ProfilePageProps) => {
   const { db } = props;
   // just checks if student exists
-
-  const auth = getAuth();
-  const navigate = useNavigate();
-
-  auth.onAuthStateChanged(() => {
-    if (!auth.currentUser) {
-      navigate("/");
-    }
-  });
 
   const { studentId = "notastudent" } = useParams();
   const studentRef = query(

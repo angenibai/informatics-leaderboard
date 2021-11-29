@@ -11,10 +11,9 @@ import {
   Text,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { getAuth } from "@firebase/auth";
 import { collection, DocumentData, Firestore } from "@firebase/firestore";
 import { useFirestoreQueryData } from "@react-query-firebase/firestore";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 interface LeaderboardProps {
   db: Firestore;
@@ -23,14 +22,6 @@ interface LeaderboardProps {
 const Leaderboard = (props: LeaderboardProps) => {
   const { db } = props;
   const highlightColor = useColorModeValue("teal.50", "teal.500");
-
-  const auth = getAuth();
-  const navigate = useNavigate();
-  auth.onAuthStateChanged(() => {
-    if (!auth.currentUser) {
-      navigate("/", { replace: true });
-    }
-  });
 
   const studentsRef = collection(db, "students");
   const query = useFirestoreQueryData(["students"], studentsRef, {
