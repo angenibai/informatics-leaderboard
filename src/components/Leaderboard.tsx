@@ -9,6 +9,7 @@ import {
   LinkOverlay,
   Spinner,
   Text,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { getAuth } from "@firebase/auth";
 import { collection, DocumentData } from "@firebase/firestore";
@@ -17,6 +18,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 
 const Leaderboard = () => {
+  const highlightColor = useColorModeValue("teal.50", "teal.500");
+
   const auth = getAuth();
   const navigate = useNavigate();
   auth.onAuthStateChanged(() => {
@@ -59,7 +62,7 @@ const Leaderboard = () => {
         <LinkBox key={`student-${info.id}`}>
           <Flex
             alignItems="center"
-            _hover={{ backgroundColor: "teal.50" }}
+            _hover={{ backgroundColor: highlightColor }}
             p={1}
             pl={4}
             pr={4}
