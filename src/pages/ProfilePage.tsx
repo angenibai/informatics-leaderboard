@@ -1,12 +1,22 @@
 import { Box, Heading, Avatar } from "@chakra-ui/react";
-import { query, collection, where, limit } from "@firebase/firestore";
+import {
+  query,
+  collection,
+  where,
+  limit,
+  Firestore,
+} from "@firebase/firestore";
 import { useFirestoreQuery } from "@react-query-firebase/firestore";
 import { useNavigate, useParams } from "react-router";
-import { db } from "../firebase";
 import ProblemsProgress from "../components/ProblemsProgress";
 import { getAuth } from "@firebase/auth";
 
-const ProfilePage = () => {
+interface ProfilePageProps {
+  db: Firestore;
+}
+
+const ProfilePage = (props: ProfilePageProps) => {
+  const { db } = props;
   // just checks if student exists
 
   const auth = getAuth();
@@ -58,7 +68,7 @@ const ProfilePage = () => {
         src={studentQuery?.data?.photoURL}
       />
       <Heading mb={4}>{studentQuery?.data?.name}</Heading>
-      <ProblemsProgress studentId={studentId} />
+      <ProblemsProgress studentId={studentId} db={db} />
     </Box>
   );
 };

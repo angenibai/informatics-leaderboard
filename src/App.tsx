@@ -1,5 +1,5 @@
 import "./App.css";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Flex,
   Box,
@@ -17,14 +17,7 @@ import {
   Avatar,
 } from "@chakra-ui/react";
 import { MoonIcon, SunIcon } from "@chakra-ui/icons";
-import {
-  collection,
-  doc,
-  DocumentData,
-  getDoc,
-  getDocs,
-  setDoc,
-} from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   getAuth,
   signInWithPopup,
@@ -49,31 +42,14 @@ import Home from "./pages/Home";
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState("");
-  const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
-  const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
   const auth = getAuth();
   const { colorMode, toggleColorMode } = useColorMode();
   const queryClient = new QueryClient();
 
-  const queryDbCollection = async (collectionName: string) => {
-    const querySnapshot = await getDocs(collection(db, collectionName));
-    return Array.from(querySnapshot.docs.map((el) => el.data()));
-  };
-
-  const getDbStudentData = async () => {
-    const receivedData = await queryDbCollection("students");
-    setStudentsData(receivedData);
-  };
-
-  const getDbProblemData = async () => {
-    const receivedData = await queryDbCollection("problems");
-    setProblemsData(receivedData);
-  };
-
   const createUser = async (user: User) => {
     getDoc(doc(db, "students", user.uid))
-      .then(userDoc => {
+      .then((userDoc) => {
         if (!userDoc.exists()) {
           setDoc(doc(db, "students", user.uid), {
             id: user.uid,
@@ -81,25 +57,21 @@ function App() {
             photoURL: user.photoURL,
             score: 0,
             solves: [],
-          })
-            .then(() => {
-              getDbStudentData();
-            })
-            .catch((err) => {
-              console.error(err)
-            });
+          }).catch((err) => {
+            console.error(err);
+          });
         }
       })
-      .catch(err => {
-        console.log('user does not have perms')
+      .catch((err) => {
+        console.log("user does not have perms");
         auth.signOut();
         setLoginError("Please use your PLC email");
-      })
+      });
   };
 
   const clearLoginError = () => {
     setLoginError("");
-  }
+  };
 
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -125,24 +97,6 @@ function App() {
       console.error(`${errorCode}: ${errorMessage}`);
     });
   };
-
-  const updateLocalStudentData = (newStudentData: DocumentData) => {
-    const newData: DocumentData[] = [];
-    studentsData.forEach((studentData) => {
-      if (studentData.id === newStudentData.id) {
-        newData.push(newStudentData);
-      } else {
-        newData.push(studentData);
-      }
-    });
-    setStudentsData(newData);
-  };
-
-  useEffect(() => {
-    getDbStudentData();
-    getDbProblemData();
-    // eslint-disable-next-line
-  }, []);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -199,12 +153,7 @@ function App() {
             <ModalOverlay />
             <ModalContent>
               <ModalCloseButton />
-              <SubmitToken
-                db={db}
-                problemsData={problemsData}
-                updateCallback={updateLocalStudentData}
-                successCallback={onClose}
-              />
+              <SubmitToken db={db} successCallback={onClose} />
             </ModalContent>
           </Modal>
           <VStack
@@ -220,18 +169,36 @@ function App() {
               <Route path="*" element={<NotFound />} />
               <Route
                 path="/"
-                element={auth.currentUser ? <LeaderboardPage /> : <Home loginCallback={openAuth} loginError={loginError} clearLoginError={clearLoginError} />}
+                element={
+                  auth.currentUser ? (
+                    <LeaderboardPage db={db} />
+                  ) : (
+                    <Home
+                      loginCallback={openAuth}
+                      loginError={loginError}
+                      clearLoginError={clearLoginError}
+                    />
+                  )
+                }
               />
               <Route
                 path="/leaderboard"
                 element={
-                  auth.currentUser ? <LeaderboardPage /> : <Navigate to="/" />
+                  auth.currentUser ? (
+                    <LeaderboardPage db={db} />
+                  ) : (
+                    <Navigate to="/" />
+                  )
                 }
               />
               <Route
                 path="/profile/:studentId"
                 element={
-                  auth.currentUser ? <ProfilePage /> : <Navigate to="/" />
+                  auth.currentUser ? (
+                    <ProfilePage db={db} />
+                  ) : (
+                    <Navigate to="/" />
+                  )
                 }
               />
             </Routes>
