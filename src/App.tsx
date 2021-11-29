@@ -206,7 +206,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
               <Route
                 path="/"
-                element={auth.currentUser ? <LeaderboardPage /> : <Home />}
+                element={auth.currentUser ? <LeaderboardPage /> : <Home loginCallback={openAuth} />}
               />
               <Route
                 path="/leaderboard"
