@@ -73,7 +73,7 @@ function App() {
 
   const createUser = async (user: User) => {
     getDoc(doc(db, "students", user.uid))
-      .then(userDoc => {
+      .then((userDoc) => {
         if (!userDoc.exists()) {
           setDoc(doc(db, "students", user.uid), {
             id: user.uid,
@@ -86,20 +86,20 @@ function App() {
               getDbStudentData();
             })
             .catch((err) => {
-              console.error(err)
+              console.error(err);
             });
         }
       })
-      .catch(err => {
-        console.log('user does not have perms')
+      .catch((err) => {
+        console.log("user does not have perms");
         auth.signOut();
         setLoginError("Please use your PLC email");
-      })
+      });
   };
 
   const clearLoginError = () => {
     setLoginError("");
-  }
+  };
 
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -220,18 +220,36 @@ function App() {
               <Route path="*" element={<NotFound />} />
               <Route
                 path="/"
-                element={auth.currentUser ? <LeaderboardPage /> : <Home loginCallback={openAuth} loginError={loginError} clearLoginError={clearLoginError} />}
+                element={
+                  auth.currentUser ? (
+                    <LeaderboardPage db={db} />
+                  ) : (
+                    <Home
+                      loginCallback={openAuth}
+                      loginError={loginError}
+                      clearLoginError={clearLoginError}
+                    />
+                  )
+                }
               />
               <Route
                 path="/leaderboard"
                 element={
-                  auth.currentUser ? <LeaderboardPage /> : <Navigate to="/" />
+                  auth.currentUser ? (
+                    <LeaderboardPage db={db} />
+                  ) : (
+                    <Navigate to="/" />
+                  )
                 }
               />
               <Route
                 path="/profile/:studentId"
                 element={
-                  auth.currentUser ? <ProfilePage /> : <Navigate to="/" />
+                  auth.currentUser ? (
+                    <ProfilePage db={db} />
+                  ) : (
+                    <Navigate to="/" />
+                  )
                 }
               />
             </Routes>

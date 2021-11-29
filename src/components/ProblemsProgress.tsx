@@ -22,15 +22,16 @@ import {
   query,
   where,
   limit,
+  Firestore,
 } from "@firebase/firestore";
 import {
   useFirestoreQuery,
   useFirestoreQueryData,
 } from "@react-query-firebase/firestore";
-import { db } from "../firebase";
 
 interface ProblemsProgressProps {
   studentId: string;
+  db: Firestore;
 }
 
 interface problemSolveInfo {
@@ -47,7 +48,7 @@ interface levelSolveInfo {
 }
 
 const ProblemsProgress = (props: ProblemsProgressProps) => {
-  const { studentId } = props;
+  const { studentId, db } = props;
   const correctColor = useColorModeValue("teal.100", "teal.400");
 
   const studentRef = query(

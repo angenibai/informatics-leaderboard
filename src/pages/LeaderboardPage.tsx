@@ -1,7 +1,14 @@
 import { Flex, Heading, Box } from "@chakra-ui/react";
+import { Firestore } from "@firebase/firestore";
 import Leaderboard from "../components/Leaderboard";
 
-const LeaderboardPage = () => {
+interface LeaderboardPageProps {
+  db: Firestore;
+}
+
+const LeaderboardPage = (props: LeaderboardPageProps) => {
+  const { db } = props;
+
   return (
     <Box className="LeaderboardPage" mb={8}>
       <Flex justifyContent="center">
@@ -9,7 +16,7 @@ const LeaderboardPage = () => {
           Who is the informatics master at PLC?
         </Heading>
       </Flex>
-      <Leaderboard />
+      <Leaderboard db={db} />
     </Box>
   );
 };
