@@ -48,6 +48,7 @@ import Home from "./pages/Home";
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [studentsData, setStudentsData] = useState<DocumentData[]>([]);
   const [problemsData, setProblemsData] = useState<DocumentData[]>([]);
   const provider = new GoogleAuthProvider();
@@ -71,21 +72,34 @@ function App() {
   };
 
   const createUser = async (user: User) => {
-    const userDoc = await getDoc(doc(db, "students", user.uid));
-    if (!userDoc.exists()) {
-      setDoc(doc(db, "students", user.uid), {
-        id: user.uid,
-        name: user.displayName,
-        photoURL: user.photoURL,
-        score: 0,
-        solves: [],
+    getDoc(doc(db, "students", user.uid))
+      .then(userDoc => {
+        if (!userDoc.exists()) {
+          setDoc(doc(db, "students", user.uid), {
+            id: user.uid,
+            name: user.displayName,
+            photoURL: user.photoURL,
+            score: 0,
+            solves: [],
+          })
+            .then(() => {
+              getDbStudentData();
+            })
+            .catch((err) => {
+              console.error(err)
+            });
+        }
       })
-        .then(() => {
-          getDbStudentData();
-        })
-        .catch((err) => console.error(err));
-    }
+      .catch(err => {
+        console.log('user does not have perms')
+        auth.signOut();
+        setLoginError("Please use your PLC email");
+      })
   };
+
+  const clearLoginError = () => {
+    setLoginError("");
+  }
 
   auth.onAuthStateChanged((user) => {
     if (user) {
@@ -206,7 +220,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
               <Route
                 path="/"
-                element={auth.currentUser ? <LeaderboardPage /> : <Home loginCallback={openAuth} />}
+                element={auth.currentUser ? <LeaderboardPage /> : <Home loginCallback={openAuth} loginError={loginError} clearLoginError={clearLoginError} />}
               />
               <Route
                 path="/leaderboard"
