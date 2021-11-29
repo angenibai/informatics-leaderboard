@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from "react";
+import React, { ChangeEvent, useState } from "react";
 import {
   Box,
   Heading,
@@ -149,6 +149,14 @@ const SubmitToken = (props: SubmitTokenProps) => {
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      event.stopPropagation();
+      handleSubmit();
+    }
+  };
+
   return (
     <Box className="SubmitToken" padding={6} textAlign="center">
       {tokenError && (
@@ -190,6 +198,7 @@ const SubmitToken = (props: SubmitTokenProps) => {
                 isRequired
                 value={inputToken}
                 onChange={handleTokenChange}
+                onKeyDown={handleKeyDown}
               />
             </GridItem>
           </>
