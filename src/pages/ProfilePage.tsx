@@ -9,6 +9,7 @@ import {
 import { useFirestoreQuery } from "@react-query-firebase/firestore";
 import { useParams } from "react-router";
 import ProblemsProgress from "../components/ProblemsProgress";
+import ProgressChart from "../components/ProgressChart";
 
 interface ProfilePageProps {
   db: Firestore;
@@ -58,6 +59,7 @@ const ProfilePage = (props: ProfilePageProps) => {
         src={studentQuery?.data?.photoURL}
       />
       <Heading mb={4}>{studentQuery?.data?.name}</Heading>
+      <ProgressChart studentId={studentId} db={db} />
       <ProblemsProgress studentId={studentId} db={db} />
     </Box>
   );
