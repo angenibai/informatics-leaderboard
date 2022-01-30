@@ -139,9 +139,9 @@ const ProblemsProgress = (props: ProblemsProgressProps) => {
   }
 
   return (
-    <Box className="ProblemsProgress">
+    <Box className="ProblemsProgress" mb={12}>
       <Heading textAlign="left" as="h3" size="lg" mb={4}>
-        Progress
+        All problems
       </Heading>
       {studentQuery.isLoading ||
       problemsQuery.isLoading ||
