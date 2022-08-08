@@ -70,11 +70,13 @@ const loadExercises = (inFile: string) => {
   });
 };
 
+/*
 const insertExercise = (problem, name, value) => {};
 
 const deleteExercise = (problem, name) => {};
 
 const renameExercise = (problem, newName) => {};
+*/
 
 const zeroPad = (number: number) => {
   return `0${number}`.slice(-2);
@@ -108,5 +110,5 @@ const createAttendanceToken = (date: Date) => {
     .catch((err) => console.error(err));
 };
 
-loadExercises("data/exercises.txt");
-// createTodaysToken();
+// loadExercises("data/exercises.txt");
+createTodaysToken();
