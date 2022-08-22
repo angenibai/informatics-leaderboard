@@ -111,4 +111,26 @@ const createAttendanceToken = (date: Date) => {
 };
 
 // loadExercises("data/exercises.txt");
-createTodaysToken();
+// createTodaysToken();
+const main = () => {
+  if (process.argv.length != 3) {
+    console.log("Usage: ts-node updateExercises.ts <t|e>");
+    console.log("\t t - create today's token");
+    console.log("\t e - load exercises from data/exercises.txt");
+    return;
+  }
+  const option = process.argv[2];
+  switch (option) {
+    case "t":
+      createTodaysToken();
+      break;
+    case "e":
+      loadExercises("data/exercises.txt");
+      break;
+    default:
+      console.log("Unknown option");
+      break;
+  }
+};
+
+main();
