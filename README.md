@@ -5,3 +5,5 @@
 Note: a PLC email is required to log in.
 
 For instructions on managing admin and tokens, see [admin](/admin/)
+
+Install dependencies with `yarn`.

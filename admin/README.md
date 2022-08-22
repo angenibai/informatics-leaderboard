@@ -2,6 +2,12 @@
 
 ## Set up
 
+### Dependencies
+
+In `informatics-leaderboard/` run `yarn` to install all dependencies.
+
+If yarn isn't installed, install it using `npm i -g yarn`.
+
 ### Firebase credentials
 
 1. Go to [Firebase Console](https://console.firebase.google.com/project/informatics-leaderboard)
